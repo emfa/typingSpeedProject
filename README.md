@@ -65,6 +65,7 @@ browser ── Cloudflare Worker (worker/) ── D1 database (migrations/)
    - `HOST_LOGINS`: who may open `/host`, as JSON, each person with their own passphrase of 12 or more characters. For example, `{"Your name": "a long passphrase of your own", "Kaif": "another long passphrase"}`.
    - `SESSION_SECRET`: any random string of 32 or more characters. One way to make one is `openssl rand -hex 32`.
    - Changing someone's passphrase signs them out everywhere; changing `SESSION_SECRET` signs out everyone.
+   - Sessions are short on purpose. You are signed out after 5 minutes without a click or key press (the console's automatic refresh does not count) and when the browser closes. To change the limit, add a plain variable `HOST_IDLE_SECONDS` (default 300).
 4. **Domain.** `kaifwedsjabeen.in` and `www.kaifwedsjabeen.in` are in `wrangler.jsonc` under `routes`, so the first deploy attaches them. The domain must be on the same Cloudflare account. `www` redirects to the bare domain.
 5. **First visit.**
    - Open `kaifwedsjabeen.in/host` and sign in.

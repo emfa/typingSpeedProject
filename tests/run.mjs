@@ -5,6 +5,7 @@ import { startServer, ROOT } from './server.mjs';
 import * as invite from './invite.mjs';
 import * as host from './host.mjs';
 import * as api from './api.mjs';
+import * as session from './session.mjs';
 
 execFileSync('node', ['scripts/build.mjs'], { cwd: ROOT, stdio: 'inherit' });
 const server = await startServer();
@@ -17,6 +18,16 @@ try {
   failed++;
 } finally {
   server.stop();
+}
+// Sessions need a short idle limit, so they get a Worker of their own.
+const short = await startServer({ port: 8791, vars: { HOST_IDLE_SECONDS: session.IDLE } });
+try {
+  failed += await session.run(short.base);
+} catch (err) {
+  console.error(err);
+  failed++;
+} finally {
+  short.stop();
 }
 console.log(failed ? `\n${failed} check(s) failed.` : '\nAll checks passed.');
 process.exit(failed ? 1 : 0);

@@ -13,10 +13,11 @@ mkdirSync(OUT, { recursive: true });
 export const LOGINS = { Tester: 'correct horse battery', Kaif: 'kaif local passphrase' };
 const WRANGLER = join(ROOT, 'node_modules', '.bin', 'wrangler');
 
-export async function startServer({ port = 8790 } = {}) {
+export async function startServer({ port = 8790, vars: extra = {} } = {}) {
   const state = mkdtempSync(join(tmpdir(), 'qubool-test-'));
   const vars = join(state, 'test.vars');
-  writeFileSync(vars, `HOST_LOGINS='${JSON.stringify(LOGINS)}'\nSESSION_SECRET=test-secret-0123456789abcdef0123456789abcdef\n`);
+  writeFileSync(vars, `HOST_LOGINS='${JSON.stringify(LOGINS)}'\nSESSION_SECRET=test-secret-0123456789abcdef0123456789abcdef\n` +
+    Object.entries(extra).map(([k, v]) => `${k}=${v}\n`).join(''));
   execFileSync(WRANGLER, ['d1', 'migrations', 'apply', 'DB', '--local', '--persist-to', state], { cwd: ROOT, stdio: 'pipe' });
   const child = spawn(WRANGLER, ['dev', '--port', String(port), '--ip', '127.0.0.1', '--persist-to', state, '--env-file', vars, '--show-interactive-dev-session=false'], {
     cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'],

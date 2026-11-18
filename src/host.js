@@ -4,10 +4,14 @@
   var $ = function (id) { return document.getElementById(id); };
   var SENDERS = Q.senders;
   var data = null, show = 'all', arming = null, editing = null, timer = null;
+  // Signed out after this many seconds without a click or key press (the server says how long).
+  var idle = 300, lastActive = Date.now(), lastTouch = Date.now();
 
   /* ---------- talking to the Worker ---------- */
-  function api(method, path, body, type) {
+  // quiet: an automatic call (the 30-second refresh, preview uploads) that must not keep the session alive.
+  function api(method, path, body, type, quiet) {
     var opts = { method: method, headers: {} };
+    if (!quiet) { opts.headers['x-qubool-activity'] = '1'; lastTouch = Date.now(); }
     if (body !== undefined) {
       if (type) { opts.headers['content-type'] = type; opts.body = body; }
       else { opts.headers['content-type'] = 'application/json'; opts.body = JSON.stringify(body); }
@@ -31,7 +35,14 @@
   /* ---------- sign in ---------- */
   function signedOut(reason) {
     clearInterval(timer);
+    var wasIn = !!data;
+    // Nothing about the guests stays on screen once the session ends.
+    data = null; editing = null; arming = null;
+    $('rows').textContent = ''; $('stats').textContent = '';
     $('app').hidden = true; $('who-am-i').hidden = true; $('login').hidden = false;
+    $('login-hint').textContent = reason === 'idle' ? 'Signed out after ' + Math.round(idle / 60) + ' minutes without activity. Sign in again to carry on.'
+      : reason === 'signed_out' && wasIn ? 'Your session ended. Sign in again to carry on.'
+      : 'Each host has their own passphrase. You are signed out after ' + Math.round(idle / 60) + ' minutes without activity, and when the browser closes.';
     if (reason === 'not_configured') {
       $('login-hint').textContent = 'Sign-in is not set up yet. Add HOST_LOGINS and SESSION_SECRET as secrets on the Worker in Cloudflare (see the README).';
       $('login-btn').disabled = true;
@@ -44,7 +55,7 @@
     fetch('/api/host/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ passphrase: $('pass').value }) })
       .then(function (res) { return res.json().then(function (d) { return { ok: res.ok, d: d }; }); })
       .then(function (r) {
-        if (r.ok) { $('pass').value = ''; load(true); return; }
+        if (r.ok) { $('pass').value = ''; idle = r.d.idleSeconds || idle; lastActive = Date.now(); load(true); return; }
         hint.textContent = r.d.error === 'locked' ? 'Too many wrong tries. Wait 15 minutes, then try again.'
           : r.d.error === 'not_configured' ? 'Sign-in is not set up yet (see the README).' : 'That passphrase is not right.';
       }, function () { hint.textContent = MESSAGES.offline; });
@@ -52,12 +63,12 @@
   $('logout').addEventListener('click', function () { api('POST', '/api/host/logout').then(function () { signedOut(); }, function () { signedOut(); }); });
 
   /* ---------- load and refresh ---------- */
-  function load(first) {
-    return api('GET', '/api/host/state').then(function (d) {
-      data = d;
+  function load(first, quiet) {
+    return api('GET', '/api/host/state', undefined, undefined, quiet).then(function (d) {
+      data = d; idle = d.idleSeconds || idle;
       $('login').hidden = true; $('app').hidden = false;
       $('who-am-i').hidden = false; $('who-am-i').textContent = 'Signed in as ' + d.user + '. Every guest gets their own link; send it, tick it off, and their reply appears here.';
-      if (first) { fillEvent(); clearInterval(timer); timer = setInterval(function () { if (!document.hidden && !editing) load(false).catch(function () {}); }, 30000); }
+      if (first) { fillEvent(); clearInterval(timer); timer = setInterval(function () { if (!document.hidden && !editing) load(false, true).catch(function () {}); }, 30000); }
       render();
       makePreviews();
     });
@@ -282,13 +293,28 @@
       $('preview-hint').textContent = 'Drawing link previews: ' + (done + 1) + ' of ' + todo.length + '…';
       drawPreview(canvas, { name: g.name, from: g.from, sha: Q.sha(g.name), date: shortDate() });
       canvas.toBlob(function (blob) {
-        api('PUT', '/api/host/guests/' + g.code + '/preview', blob, 'image/jpeg').then(function () { g.previewAt = new Date().toISOString(); }, function () {})
+        api('PUT', '/api/host/guests/' + g.code + '/preview', blob, 'image/jpeg', true).then(function () { g.previewAt = new Date().toISOString(); }, function () {})
           .then(function () { done++; next(); });
       }, 'image/jpeg', 0.86);
     });
   }
   // For scripts/og.mjs, which renders the generic preview once at build time.
   window.QuboolPreview = { draw: drawPreview, fonts: loadFonts };
+
+  /* ---------- the idle sign-out ---------- */
+  // Clicks and typing count as activity. If the host is busy on the page without saving anything,
+  // tell the server once a minute so it does not end the session under them.
+  function touch() {
+    lastActive = Date.now();
+    if (data && Date.now() - lastTouch > 60000) api('POST', '/api/host/ping').catch(function () {});
+  }
+  ['pointerdown', 'keydown', 'input'].forEach(function (ev) { document.addEventListener(ev, touch, true); });
+  setInterval(function () {
+    if (data && Date.now() - lastActive > idle * 1000) {
+      fetch('/api/host/logout', { method: 'POST' }).catch(function () {});
+      signedOut('idle');
+    }
+  }, 2000);
 
   load(true).catch(function () {});
 })();

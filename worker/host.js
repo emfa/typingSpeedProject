@@ -6,7 +6,10 @@ import { CODE, DEFAULT_EVENT, getEvent } from './guest.js';
 import { publicReply } from './rsvp.js';
 
 const COOKIE = '__Host-qubool';
-const SESSION_DAYS = 30;
+// A session ends after this long without the host doing anything (clicks, typing, saves).
+// The console's automatic refresh does not count, so an open tab left alone signs out too.
+const IDLE_SECONDS = 300;
+const idleSeconds = (env) => { const n = Number(env.HOST_IDLE_SECONDS); return Number.isFinite(n) && n >= 1 ? n : IDLE_SECONDS; };
 const MIN_PASSPHRASE = 12;
 
 /* ---------- who may sign in ---------- */
@@ -24,10 +27,10 @@ function logins(env) {
 const configured = (env) => (env.SESSION_SECRET || '').length >= 32 && logins(env).length > 0;
 
 // A session is "<payload>.<signature>". The signature covers the user's current passphrase,
-// so changing someone's passphrase signs them out everywhere.
+// so changing someone's passphrase signs them out everywhere. "v2" retired the old 30-day sessions.
 async function sign(env, user, pass, exp) {
-  const payload = b64url(new TextEncoder().encode(JSON.stringify({ u: user, exp })));
-  const sig = b64url(await hmac(env.SESSION_SECRET, payload + '|' + (await sha256hex(pass))));
+  const payload = b64url(new TextEncoder().encode(JSON.stringify({ v: 2, u: user, exp })));
+  const sig = b64url(await hmac(env.SESSION_SECRET, 'v2|' + payload + '|' + (await sha256hex(pass))));
   return payload + '.' + sig;
 }
 export async function hostUser(env, request) {
@@ -38,14 +41,16 @@ export async function hostUser(env, request) {
   if (!payload || !sig) return null;
   let data;
   try { data = JSON.parse(new TextDecoder().decode(b64urlDecode(payload))); } catch { return null; }
-  if (!data || typeof data.u !== 'string' || !(data.exp > Date.now())) return null;
+  if (!data || data.v !== 2 || typeof data.u !== 'string' || !(data.exp > Date.now())) return null;
   const entry = logins(env).find(([name]) => name === data.u);
   if (!entry) return null;
   const expected = await sign(env, entry[0], entry[1], data.exp);
   const enc = new TextEncoder();
-  return sameBytes(enc.encode(expected), enc.encode(payload + '.' + sig)) ? data.u : null;
+  return sameBytes(enc.encode(expected), enc.encode(payload + '.' + sig)) ? entry : null;
 }
-const cookieHeader = (value, maxAge) => `${COOKIE}=${value}; Path=/; Max-Age=${maxAge}; HttpOnly; Secure; SameSite=Strict`;
+// No Max-Age: the cookie also ends when the browser closes. The expiry inside it ends it sooner.
+const cookieHeader = (value, clear) => `${COOKIE}=${value}; Path=/;${clear ? ' Max-Age=0;' : ''} HttpOnly; Secure; SameSite=Strict`;
+const freshCookie = async (env, [name, pass]) => cookieHeader(await sign(env, name, pass, Date.now() + idleSeconds(env) * 1000));
 
 async function login(env, request) {
   if (!configured(env)) return fail(503, 'not_configured');
@@ -60,8 +65,7 @@ async function login(env, request) {
     await throttled(env, bucket, 10, 15 * 60000, true);
     return fail(401, 'wrong_passphrase');
   }
-  const exp = Date.now() + SESSION_DAYS * 86400000;
-  return json({ user: match[0] }, 200, { 'set-cookie': cookieHeader(await sign(env, match[0], match[1], exp), SESSION_DAYS * 86400) });
+  return json({ user: match[0], idleSeconds: idleSeconds(env) }, 200, { 'set-cookie': await freshCookie(env, match) });
 }
 
 /* ---------- the console's data ---------- */
@@ -81,7 +85,7 @@ async function state(env, user, url) {
   ]);
   const byId = new Map(replies.results.map((r) => [r.id, r]));
   return {
-    user, origin: url.origin, event, repliesOpen: open ? JSON.parse(open.value) !== false : true,
+    user, idleSeconds: idleSeconds(env), origin: url.origin, event, repliesOpen: open ? JSON.parse(open.value) !== false : true,
     guests: guests.results.map((g) => guestRow(g, byId.get(g.code))),
   };
 }
@@ -198,11 +202,21 @@ export async function hostRoute(env, request, url) {
   const path = url.pathname, method = request.method;
   if (path === '/host' || path === '/host/') return method === 'GET' ? html(hostHtml.replace('<!--HEAD-->', '<title>Guests · Kaif &amp; Jabeen</title>').replace('/*DATA*/null', 'null')) : fail(405, 'method');
   if (path === '/api/host/login' && method === 'POST') return login(env, request);
-  if (path === '/api/host/logout' && method === 'POST') return json({ ok: true }, 200, { 'set-cookie': cookieHeader('', 0) });
+  if (path === '/api/host/logout' && method === 'POST') return json({ ok: true }, 200, { 'set-cookie': cookieHeader('', true) });
 
-  const user = await hostUser(env, request);
-  if (!user) return fail(401, configured(env) ? 'signed_out' : 'not_configured');
+  const entry = await hostUser(env, request);
+  if (!entry) return fail(401, configured(env) ? 'signed_out' : 'not_configured');
+  const res = await hostApi(env, request, url, entry[0]);
+  // Something the host did (not the automatic refresh): the five minutes start again.
+  if (request.headers.get('x-qubool-activity') !== '1' || res.status === 401) return res;
+  const out = new Response(res.body, res);
+  out.headers.append('set-cookie', await freshCookie(env, entry));
+  return out;
+}
 
+async function hostApi(env, request, url, user) {
+  const path = url.pathname, method = request.method;
+  if (path === '/api/host/ping' && method === 'POST') return json({ ok: true });
   if (path === '/api/host/state' && method === 'GET') return json(await state(env, user, url));
   if (path === '/api/host/export.csv' && method === 'GET') return exportCsv(env, url);
   if (path === '/api/host/guests' && method === 'POST') {
