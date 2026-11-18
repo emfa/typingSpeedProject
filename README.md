@@ -52,7 +52,7 @@ browser ── Cloudflare Worker (worker/) ── D1 database (migrations/)
 
 1. **Create the database.**
    - In the Cloudflare dashboard go to **Storage & databases → D1 → Create database**, and name it `kaif-jabeen`.
-   - Copy its **Database ID** into `wrangler.jsonc` in place of `00000000-0000-0000-0000-000000000000`, and commit. The ID is not a secret.
+   - Its **Database ID** goes in `wrangler.jsonc` (done: `5bea7abe-…`). The ID is not a secret.
 2. **Connect this repository.**
    - Go to **Workers & Pages → Create → Import a repository**, and pick this repository.
    - Project name: `kaif-jabeen`, which must match `name` in `wrangler.jsonc`.

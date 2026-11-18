@@ -13,8 +13,8 @@
     {
       "binding": "DB",
       "database_name": "kaif-jabeen",
-      // Paste the ID shown when you create the database (see README, step 2).
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      // The kaif-jabeen database on the owners' Cloudflare account.
+      "database_id": "5bea7abe-692a-4804-b0e7-a0fe62f6beb3",
       "migrations_dir": "migrations"
     }
   ],
