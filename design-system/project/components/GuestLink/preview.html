@@ -1,0 +1,42 @@
+<!-- @dsCard group="Host" height=250 subtitle="One private link per guest" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GuestLink — preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri&family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+.q-stage { flex-direction: column; gap: var(--space-3); }
+</style>
+</head>
+<body>
+<div class="q-stage" id="list"></div>
+<script>
+(function () {
+  var Q = window.Qubool;
+  var GUESTS = [
+    { name: 'Priya Nair', from: 'k', line: 0 },
+    { name: 'Rahul Mehta', from: 'k', line: 1 },
+    { name: 'Sneha Iyer', from: 'j', line: 3 }
+  ];
+  document.getElementById('list').innerHTML = GUESTS.map(function (raw) {
+    var g = Q.guest(raw), code = g.slug, cut = code.lastIndexOf('-'), tail = g.line == null ? '' : '-' + g.line;
+    return '<div class="q-link">' +
+      '<div class="q-seal q-seal-small">' + Q.jaaliSVG(g.name, { width: 40, height: 40, cell: 26, weight: 1 }) + '</div>' +
+      '<span class="q-link-who">' + Q.esc(g.name) + '</span>' +
+      '<span class="q-link-url">\u2026/invite#' + code.slice(0, cut) + '<b>' + code.slice(cut) + '</b>' + tail + '</span>' +
+      '<button class="q-btn q-btn-small" type="button" data-url="#' + Q.linkFor(code, g.line) + '">Copy link</button>' +
+    '</div>';
+  }).join('');
+  document.getElementById('list').addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) return;
+    var done = function () { b.textContent = 'Copied'; setTimeout(function () { b.textContent = 'Copy link'; }, 1400); };
+    try { navigator.clipboard.writeText(b.dataset.url).then(done, done); } catch (err) { done(); }
+  });
+})();
+</script>
+</body>
+</html>

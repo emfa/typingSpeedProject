@@ -1,0 +1,67 @@
+<!-- @dsCard group="Personal" height=384 subtitle="The first thing a guest sees" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Terminal — preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri&family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+.col { flex: 1 1 420px; max-width: 560px; }
+  .bar { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: center; }
+  .bar .q-seg { flex: 1 1 280px; }
+</style>
+</head>
+<body>
+<div class="q-stage">
+  <div class="q-stack col">
+    <div class="q-term" role="img" aria-label="A terminal greeting the guest by name and printing the note from whoever invited them">
+      <div class="q-term-bar"><i></i><i></i><i></i><span id="host"></span></div>
+      <div class="q-term-body" id="out"></div>
+    </div>
+    <div class="bar">
+      <div class="q-seg" id="who" role="radiogroup" aria-label="Preview as guest"></div>
+      <button class="q-btn" id="replay" type="button">Replay</button>
+    </div>
+  </div>
+</div>
+<script>
+(function () {
+  var Q = window.Qubool;
+  var GUESTS = [
+    // Samples. On the live page these come from the link: name and sender from the code,
+    // line from its -<n> suffix, note from the page's NOTES table.
+    { name: 'Priya Nair', from: 'k', line: 0, note: 'You reviewed my worst pull requests without judgment. Come watch me ship the one that matters.' },
+    { name: 'Rahul Mehta', from: 'k', line: 1, note: '' },
+    { name: 'Sneha Iyer', from: 'j', line: 3, note: 'You were the first person I told. Of course you are on this list.' }
+  ];
+  var out = document.getElementById('out'), host = document.getElementById('host'), run = null, current = 0;
+  document.getElementById('who').innerHTML = GUESTS.map(function (g, i) {
+    return '<label><input type="radio" name="who" value="' + i + '"' + (i ? '' : ' checked') + '><span>' + Q.first(g.name) + '</span></label>';
+  }).join('');
+  function play(i) {
+    current = i;
+    var g = Q.guest(GUESTS[i]), u = g.first.toLowerCase();
+    if (run) run.stop();
+    host.textContent = u + '@reception';
+    var lines = [
+      { typed: true, text: 'ssh ' + u + '@reception.kaif-jabeen' },
+      { text: 'verifying invite ' + g.sha + ' \u2026 ok', cls: 'q-out' },
+      { text: 'Assalamu alaikum, ' + g.first + '.', cls: 'q-say', pause: 500 },
+      { typed: true, text: 'cat note.txt' },
+      { text: g.note || g.quip, pause: 700 }
+    ];
+    if (g.note) lines.push({ text: g.quip, cls: 'q-out', pause: 500 });
+    lines.push({ typed: true, text: './open-invite', pause: 200 });
+    lines.push({ text: 'invite open, signed ' + g.sender + '. Scroll down, or type help.', cls: 'q-out', pause: 0 });
+    run = Q.type(out, lines);
+  }
+  document.getElementById('who').addEventListener('change', function (e) { play(+e.target.value); });
+  document.getElementById('replay').addEventListener('click', function () { play(current); });
+  play(0);
+})();
+</script>
+</body>
+</html>

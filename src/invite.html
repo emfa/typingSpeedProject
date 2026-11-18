@@ -1,0 +1,126 @@
+<main class="page">
+
+  <section class="q-term" aria-label="Terminal">
+    <div class="q-term-bar"><i></i><i></i><i></i><span id="host">guest@reception</span><button class="skip" id="skip" type="button">Skip</button></div>
+    <div class="q-term-body" id="out"></div>
+    <form class="shell" id="shell" hidden autocomplete="off">
+      <label class="q-p" for="cmd" id="prompt">$</label>
+      <input id="cmd" name="cmd" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="type help" enterkeyhint="go">
+    </form>
+  </section>
+
+  <article class="q-card" id="card">
+    <div class="q-card-arch" id="arch"></div>
+    <div class="q-card-body">
+      <p class="q-bismillah" lang="ar" dir="rtl">بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</p>
+      <p class="q-label">Reception · invite <b id="hash">0000000</b></p>
+      <h1 class="q-names">Kaif <i>&amp;</i> Jabeen</h1>
+      <p class="q-prose"><span id="greet">Assalamu alaikum.</span> <span id="invite-text">We are getting married. The nikah is a small family gathering in the morning; the reception after it is where we want our people. Come hungry.</span></p>
+      <p class="q-note" id="note" hidden></p>
+      <dl class="q-facts">
+        <div><dt>When</dt><dd id="when">To be announced</dd></div>
+        <div><dt>Where</dt><dd id="where">To be announced</dd></div>
+      </dl>
+      <p class="q-sign" id="sign">— Kaif</p>
+      <p class="q-hint" id="ps"></p>
+    </div>
+  </article>
+
+  <section class="block" aria-labelledby="h-day">
+    <h2 class="q-label" id="h-day">The day, in order</h2>
+    <ol class="q-schedule">
+      <li data-private>
+        <time id="t-nikah">Morning</time>
+        <div><h3>Nikah</h3><p>A small family gathering. Keep us in your duas.</p></div>
+        <span class="q-tag">Family only</span>
+      </li>
+      <li>
+        <time id="t-reception">TBA</time>
+        <div><h3>Reception</h3><p>Doors open. Come say salaam to both of us.</p></div>
+        <span class="q-tag q-tag-on">You are invited</span>
+      </li>
+      <li>
+        <time id="t-lunch">TBA</time>
+        <div><h3>Lunch</h3><p>Veg and non-veg, as you choose below.</p></div>
+        <span class="q-tag q-tag-on">You are invited</span>
+      </li>
+    </ol>
+    <div class="actions" id="actions" hidden>
+      <details class="calmenu" id="cal">
+        <summary class="q-btn">Add to calendar</summary>
+        <div class="calmenu-list">
+          <a class="q-btn q-btn-small" id="cal-google" target="_blank" rel="noopener">Google Calendar</a>
+          <a class="q-btn q-btn-small" id="cal-ics" download>Apple or Outlook (.ics)</a>
+        </div>
+      </details>
+      <a class="q-btn" id="maps" target="_blank" rel="noopener">Open in Maps</a>
+    </div>
+  </section>
+
+  <section class="block" id="rsvp" aria-labelledby="h-rsvp">
+    <h2 class="q-label" id="h-rsvp">Your reply</h2>
+    <form class="q-rsvp" id="form" novalidate>
+      <div class="q-field" id="who-field" hidden>
+        <label class="q-label" for="who">Your name</label>
+        <input class="q-input" id="who" maxlength="60" autocomplete="name" placeholder="So I know who is coming">
+      </div>
+      <fieldset class="q-field" id="from-field" hidden>
+        <legend class="q-label">Who invited you?</legend>
+        <div class="q-seg">
+          <label><input type="radio" name="from" id="from-k" value="k"><span>Kaif</span></label>
+          <label><input type="radio" name="from" id="from-j" value="j"><span>Jabeen</span></label>
+        </div>
+      </fieldset>
+      <fieldset class="q-field">
+        <legend class="q-label" id="ask">Will you be there?</legend>
+        <div class="q-seg">
+          <label><input type="radio" name="coming" id="coming-yes" value="yes"><span>Qubool hai, I&rsquo;m in</span></label>
+          <label><input type="radio" name="coming" id="coming-no" value="no"><span>Can&rsquo;t make it</span></label>
+        </div>
+      </fieldset>
+      <div class="more" id="more" hidden>
+        <div class="q-row">
+          <div class="q-field">
+            <span class="q-label" id="l-seats">Seats, including you</span>
+            <div class="q-step" role="group" aria-labelledby="l-seats">
+              <button type="button" id="seats-less" data-step="seats" data-by="-1" aria-label="One seat fewer">&minus;</button>
+              <output id="seats">1</output>
+              <button type="button" id="seats-more" data-step="seats" data-by="1" aria-label="One seat more">+</button>
+            </div>
+          </div>
+          <div class="q-field" id="split" hidden>
+            <span class="q-label" id="l-veg">Of those, vegetarian</span>
+            <div class="q-step" role="group" aria-labelledby="l-veg">
+              <button type="button" id="veg-less" data-step="veg" data-by="-1" aria-label="One vegetarian plate fewer">&minus;</button>
+              <output id="veg">0</output>
+              <button type="button" id="veg-more" data-step="veg" data-by="1" aria-label="One vegetarian plate more">+</button>
+            </div>
+          </div>
+        </div>
+        <fieldset class="q-field" id="one">
+          <legend class="q-label">Your lunch</legend>
+          <div class="q-seg" id="meal"></div>
+        </fieldset>
+        <p class="q-hint" id="plates" hidden></p>
+      </div>
+      <div class="q-field">
+        <label class="q-label" for="msg">A line for me (optional)</label>
+        <input class="q-input" id="msg" maxlength="140" placeholder="A dua, a roast, or an allergy" autocomplete="off">
+      </div>
+      <p class="q-echo" id="echo" aria-live="polite"></p>
+      <div class="send">
+        <button class="q-btn q-btn-primary" id="send" type="submit" disabled>Send RSVP</button>
+        <button class="q-btn" id="copy" type="button" hidden>Copy my reply instead</button>
+        <p class="q-hint" id="send-hint" aria-live="polite"></p>
+      </div>
+    </form>
+    <div class="q-rsvp" id="done" hidden>
+      <p class="q-done" id="thanks" tabindex="-1"></p>
+      <p class="q-echo" id="receipt"></p>
+      <p class="q-hint" id="next"></p>
+      <div><button class="q-btn" id="edit" type="button">Change my answer</button></div>
+    </div>
+  </section>
+
+  <footer class="foot q-hint" id="foot"></footer>
+</main>

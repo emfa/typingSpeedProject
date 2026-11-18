@@ -1,0 +1,47 @@
+<!-- @dsCard group="Personal" height=452 subtitle="A lattice drawn from the guest's name" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Jaali — preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri&family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+.try { flex: 1 1 420px; min-width: 0; }
+  .panel { height: 240px; border-radius: var(--radius-md); overflow: hidden; background: var(--emerald); }
+  .seals { flex: 0 1 260px; }
+  .who { display: flex; align-items: center; gap: var(--space-4); }
+  .who p { margin: 0; font: 400 17px/22px var(--font-display); }
+  .who small { display: block; font: 400 13px/22px var(--font-mono); color: var(--ink-muted); }
+</style>
+</head>
+<body>
+<div class="q-stage">
+  <div class="q-stack try">
+    <label class="q-label" for="name">Type any name</label>
+    <input class="q-input" id="name" value="Priya Nair" autocomplete="off" spellcheck="false">
+    <div class="panel" id="panel"></div>
+    <p class="q-hint" id="meta" aria-live="polite"></p>
+  </div>
+  <div class="q-stack seals" id="seals"></div>
+</div>
+<script>
+(function () {
+  var Q = window.Qubool;
+  var input = document.getElementById('name'), panel = document.getElementById('panel'), meta = document.getElementById('meta');
+  function draw() {
+    var n = input.value || 'friend', p = Q.jaaliParams(n);
+    panel.innerHTML = Q.jaaliSVG(n, { width: 640, height: 240, cell: 64 });
+    meta.textContent = 'invite ' + Q.sha(n) + ' \u00b7 tiling ' + p.label + ' \u00b7 contact angle ' + p.theta.toFixed(1) + '\u00b0' + (p.split ? ' \u00b7 split ' + p.split.toFixed(2) : '') + (p.strap ? ' \u00b7 strapwork' : '');
+  }
+  input.addEventListener('input', draw);
+  draw();
+  document.getElementById('seals').innerHTML = ['Rahul Mehta', 'Sneha Iyer', 'Imran Shaikh'].map(function (n) {
+    return '<div class="who"><div class="q-seal">' + Q.jaaliSVG(n, { width: 96, height: 96, cell: 44 }) + '</div><p>' + Q.esc(n) + '<small>' + Q.sha(n) + '</small></p></div>';
+  }).join('');
+})();
+</script>
+</body>
+</html>

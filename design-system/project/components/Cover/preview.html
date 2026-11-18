@@ -1,0 +1,50 @@
+<!-- @dsCard height=288 -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Qubool</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--ground); color: var(--ink); overflow: hidden; }
+  .cover { position: relative; width: 960px; height: 288px; overflow: hidden; }
+  .art { position: absolute; inset: 0; }
+  .art svg { display: block; width: 960px; height: 288px; }
+  .arch { fill: var(--emerald); }
+  .brass { fill: var(--brass); rx: var(--radius-sm); }
+  .slab { fill: var(--ink); rx: var(--radius-md); }
+  .caret { fill: var(--term-green); rx: var(--radius-sm); }
+  .lattice { fill: none; stroke: var(--gilt); stroke-width: 1.5px; stroke-linejoin: miter; }
+  .words { position: absolute; left: var(--space-8); bottom: var(--space-8); max-width: 440px; }
+  .name { margin: 0; font: 300 120px/.9 var(--font-display); letter-spacing: -0.03em; color: var(--ink); }
+  .tag { margin: var(--space-4) 0 0 6px; font: 400 13px/20px var(--font-mono); color: var(--ink-muted); }
+</style>
+</head>
+<body>
+<div class="cover">
+<div class="art" aria-hidden="true">
+<svg viewBox="0 0 960 288" width="960" height="288">
+<!--
+  blocks      emerald arch 192 wide, bled off the foot (the identity colour, largest) · ink slab 136 wide, bled off the right edge · brass 112×112 (the one accent) · term-green 16×32 once (it only ever means the caret) — about 30% of 960×288
+  arrangement three unequal uprights hung from one line space-8 below the top edge, space-6 gutters; the arch is the invite card's own silhouette
+  pattern     the literal motif: the README says each guest gets "a lattice drawn from their name", so the arch carries one — star-and-cross lines in gilt from the same generator (tiling 4.4.4.4, contact angle 67.5°), 24 stars at a space-12 pitch
+  scales      arch width 4 × space-12, its rx half that (the radius-arch idea at cover size); gutters space-6; top inset space-8; brass corners radius-sm; slab corners radius-md; caret space-4 × space-8
+-->
+<defs><clipPath id="arch"><rect x="496" y="32" width="192" height="320" rx="96"/></clipPath></defs>
+<rect class="arch" x="496" y="32" width="192" height="320" rx="96"/>
+<g clip-path="url(#arch)"><path class="lattice" transform="translate(496 32)" d="M-48 -24L-55 -41L-72 -48M-72 -48L-55 -55L-48 -72M-48 -72L-41 -55L-24 -48M-24 -48L-41 -41L-48 -24M0 -24L-7 -41L-24 -48M-24 -48L-7 -55L0 -72M0 -72L7 -55L24 -48M24 -48L7 -41L0 -24M48 -24L41 -41L24 -48M24 -48L41 -55L48 -72M48 -72L55 -55L72 -48M72 -48L55 -41L48 -24M96 -24L89 -41L72 -48M72 -48L89 -55L96 -72M96 -72L103 -55L120 -48M120 -48L103 -41L96 -24M144 -24L137 -41L120 -48M120 -48L137 -55L144 -72M144 -72L151 -55L168 -48M168 -48L151 -41L144 -24M192 -24L185 -41L168 -48M168 -48L185 -55L192 -72M192 -72L199 -55L216 -48M216 -48L199 -41L192 -24M-48 24L-55 7L-72 0M-72 0L-55 -7L-48 -24M-48 -24L-41 -7L-24 0M-24 0L-41 7L-48 24M0 24L-7 7L-24 0M-24 0L-7 -7L0 -24M0 -24L7 -7L24 0M24 0L7 7L0 24M48 24L41 7L24 0M24 0L41 -7L48 -24M48 -24L55 -7L72 0M72 0L55 7L48 24M96 24L89 7L72 0M72 0L89 -7L96 -24M96 -24L103 -7L120 0M120 0L103 7L96 24M144 24L137 7L120 0M120 0L137 -7L144 -24M144 -24L151 -7L168 0M168 0L151 7L144 24M192 24L185 7L168 0M168 0L185 -7L192 -24M192 -24L199 -7L216 0M216 0L199 7L192 24M-48 72L-55 55L-72 48M-72 48L-55 41L-48 24M-48 24L-41 41L-24 48M-24 48L-41 55L-48 72M0 72L-7 55L-24 48M-24 48L-7 41L0 24M0 24L7 41L24 48M24 48L7 55L0 72M48 72L41 55L24 48M24 48L41 41L48 24M48 24L55 41L72 48M72 48L55 55L48 72M96 72L89 55L72 48M72 48L89 41L96 24M96 24L103 41L120 48M120 48L103 55L96 72M144 72L137 55L120 48M120 48L137 41L144 24M144 24L151 41L168 48M168 48L151 55L144 72M192 72L185 55L168 48M168 48L185 41L192 24M192 24L199 41L216 48M216 48L199 55L192 72M-48 120L-55 103L-72 96M-72 96L-55 89L-48 72M-48 72L-41 89L-24 96M-24 96L-41 103L-48 120M0 120L-7 103L-24 96M-24 96L-7 89L0 72M0 72L7 89L24 96M24 96L7 103L0 120M48 120L41 103L24 96M24 96L41 89L48 72M48 72L55 89L72 96M72 96L55 103L48 120M96 120L89 103L72 96M72 96L89 89L96 72M96 72L103 89L120 96M120 96L103 103L96 120M144 120L137 103L120 96M120 96L137 89L144 72M144 72L151 89L168 96M168 96L151 103L144 120M192 120L185 103L168 96M168 96L185 89L192 72M192 72L199 89L216 96M216 96L199 103L192 120M-48 168L-55 151L-72 144M-72 144L-55 137L-48 120M-48 120L-41 137L-24 144M-24 144L-41 151L-48 168M0 168L-7 151L-24 144M-24 144L-7 137L0 120M0 120L7 137L24 144M24 144L7 151L0 168M48 168L41 151L24 144M24 144L41 137L48 120M48 120L55 137L72 144M72 144L55 151L48 168M96 168L89 151L72 144M72 144L89 137L96 120M96 120L103 137L120 144M120 144L103 151L96 168M144 168L137 151L120 144M120 144L137 137L144 120M144 120L151 137L168 144M168 144L151 151L144 168M192 168L185 151L168 144M168 144L185 137L192 120M192 120L199 137L216 144M216 144L199 151L192 168M-48 216L-55 199L-72 192M-72 192L-55 185L-48 168M-48 168L-41 185L-24 192M-24 192L-41 199L-48 216M0 216L-7 199L-24 192M-24 192L-7 185L0 168M0 168L7 185L24 192M24 192L7 199L0 216M48 216L41 199L24 192M24 192L41 185L48 168M48 168L55 185L72 192M72 192L55 199L48 216M96 216L89 199L72 192M72 192L89 185L96 168M96 168L103 185L120 192M120 192L103 199L96 216M144 216L137 199L120 192M120 192L137 185L144 168M144 168L151 185L168 192M168 192L151 199L144 216M192 216L185 199L168 192M168 192L185 185L192 168M192 168L199 185L216 192M216 192L199 199L192 216M-48 264L-55 247L-72 240M-72 240L-55 233L-48 216M-48 216L-41 233L-24 240M-24 240L-41 247L-48 264M0 264L-7 247L-24 240M-24 240L-7 233L0 216M0 216L7 233L24 240M24 240L7 247L0 264M48 264L41 247L24 240M24 240L41 233L48 216M48 216L55 233L72 240M72 240L55 247L48 264M96 264L89 247L72 240M72 240L89 233L96 216M96 216L103 233L120 240M120 240L103 247L96 264M144 264L137 247L120 240M120 240L137 233L144 216M144 216L151 233L168 240M168 240L151 247L144 264M192 264L185 247L168 240M168 240L185 233L192 216M192 216L199 233L216 240M216 240L199 247L192 264M-48 312L-55 295L-72 288M-72 288L-55 281L-48 264M-48 264L-41 281L-24 288M-24 288L-41 295L-48 312M0 312L-7 295L-24 288M-24 288L-7 281L0 264M0 264L7 281L24 288M24 288L7 295L0 312M48 312L41 295L24 288M24 288L41 281L48 264M48 264L55 281L72 288M72 288L55 295L48 312M96 312L89 295L72 288M72 288L89 281L96 264M96 264L103 281L120 288M120 288L103 295L96 312M144 312L137 295L120 288M120 288L137 281L144 264M144 264L151 281L168 288M168 288L151 295L144 312M192 312L185 295L168 288M168 288L185 281L192 264M192 264L199 281L216 288M216 288L199 295L192 312"/></g>
+<rect class="brass" x="712" y="32" width="112" height="112" rx="2"/>
+<rect class="caret" x="712" y="168" width="16" height="32" rx="2"/>
+<rect class="slab" x="848" y="32" width="136" height="224" rx="8"/>
+</svg>
+</div>
+<div class="words">
+<h1 class="name">Qubool</h1>
+<p class="tag">An invitation that knows your name.</p>
+</div>
+</div>
+</body>
+</html>

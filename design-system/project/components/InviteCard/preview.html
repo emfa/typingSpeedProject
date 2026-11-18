@@ -1,0 +1,73 @@
+<!-- @dsCard group="Personal" height=912 subtitle="One card per guest" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>InviteCard — preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri&family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+.side { flex: 1 1 260px; max-width: 360px; }
+  .side dl { margin: 0; display: grid; gap: var(--space-3); }
+  .side dt { font: 500 11px/16px var(--font-mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-muted); }
+  .side dd { margin: 0; font: 400 13px/22px var(--font-mono); overflow-wrap: anywhere; }
+</style>
+</head>
+<body>
+<div class="q-stage">
+  <article class="q-card" id="card"></article>
+  <div class="q-stack side">
+    <p class="q-label">Preview as guest</p>
+    <div class="q-seg" id="who" role="radiogroup" aria-label="Preview as guest"></div>
+    <p class="q-label" style="margin-top:var(--space-4)">What this guest's link changes</p>
+    <dl id="diff"></dl>
+  </div>
+</div>
+<script>
+(function () {
+  var Q = window.Qubool;
+  var GUESTS = [
+    // Samples. On the live page these come from the link: name and sender from the code,
+    // line from its -<n> suffix, note from the page's NOTES table.
+    { name: 'Priya Nair', from: 'k', line: 0, note: 'You reviewed my worst pull requests without judgment. Come watch me ship the one that matters.' },
+    { name: 'Rahul Mehta', from: 'k', line: 1, note: '' },
+    { name: 'Sneha Iyer', from: 'j', line: 3, note: 'You were the first person I told. Of course you are on this list.' }
+  ];
+  var card = document.getElementById('card'), diff = document.getElementById('diff');
+  document.getElementById('who').innerHTML = GUESTS.map(function (g, i) {
+    return '<label><input type="radio" name="who" value="' + i + '"' + (i ? '' : ' checked') + '><span>' + Q.first(g.name) + '</span></label>';
+  }).join('');
+  function show(i) {
+    var g = Q.guest(GUESTS[i]);
+    card.innerHTML =
+      '<div class="q-card-arch">' + Q.jaaliSVG(g.name, { width: 380, height: 200, cell: 60 }) + '</div>' +
+      '<div class="q-card-body">' +
+        '<p class="q-bismillah" lang="ar" dir="rtl">\u0628\u0650\u0633\u0652\u0645\u0650 \u0671\u0644\u0644\u0651\u064e\u0670\u0647\u0650 \u0671\u0644\u0631\u0651\u064e\u062d\u0652\u0645\u064e\u0670\u0646\u0650 \u0671\u0644\u0631\u0651\u064e\u062d\u0650\u064a\u0645\u0650</p>' +
+        '<p class="q-label">Reception \u00b7 invite <b>' + g.sha + '</b></p>' +
+        '<h1 class="q-names">Kaif <i>&amp;</i> Jabeen</h1>' +
+        '<p class="q-prose">Assalamu alaikum, ' + Q.esc(g.first) + '. I am getting married. The nikah is a small family gathering in the morning; the reception after it is where I want my people. Come hungry.</p>' +
+        (g.note ? '<p class="q-note">\u201c' + Q.esc(g.note) + '\u201d</p>' : '') +
+        '<dl class="q-facts">' +
+          '<div><dt>When</dt><dd>Sat 26 Dec 2026</dd></div>' +
+          '<div><dt>Where</dt><dd>See it on the map</dd></div>' +
+        '</dl>' +
+        '<p class="q-sign">\u2014 ' + g.sender + '</p>' +
+        '<p class="q-hint">P.S. ' + Q.esc(g.quip) + '</p>' +
+      '</div>';
+    diff.innerHTML = [
+      ['Link', '\u2026#' + Q.linkFor(g.slug, g.line)],
+      ['Invite hash', g.sha],
+      ['Lattice', 'tiling ' + g.jaali.label + ', angle ' + g.jaali.theta.toFixed(1) + '\u00b0' + (g.jaali.strap ? ', strapwork' : '')],
+      ['Signed', g.sender + ', who sent the link'],
+      ['Note', g.note ? 'written by ' + g.sender + ' for ' + g.first : 'none; the card leaves the space out'],
+      ['P.S.', g.sender + '\u2019s line ' + g.line + ', assigned when the guest was added']
+    ].map(function (r) { return '<div><dt>' + r[0] + '</dt><dd>' + Q.esc(r[1]) + '</dd></div>'; }).join('');
+  }
+  document.getElementById('who').addEventListener('change', function (e) { show(+e.target.value); });
+  show(0);
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,28 @@
+<!-- @dsCard group="Event" height=88 subtitle="Veg and non-veg, by shape and word" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MealMark — preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri&family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+.q-stage { align-items: center; gap: var(--space-8); }
+</style>
+</head>
+<body>
+<div class="q-stage" id="row"></div>
+<script>
+(function () {
+  var Q = window.Qubool;
+  document.getElementById('row').innerHTML =
+    '<span class="q-meal q-meal-veg">' + Q.mealMark('veg') + 'Veg</span>' +
+    '<span class="q-meal q-meal-nonveg">' + Q.mealMark('nonveg') + 'Non-veg</span>' +
+    '<span class="q-meal q-meal-veg">' + Q.mealMark('veg') + '12 plates</span>' +
+    '<span class="q-meal q-meal-nonveg">' + Q.mealMark('nonveg') + '29 plates</span>';
+})();
+</script>
+</body>
+</html>

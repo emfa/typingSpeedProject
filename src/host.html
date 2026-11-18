@@ -1,0 +1,107 @@
+<main class="host">
+  <header class="head">
+    <p class="q-label">Kaif &amp; Jabeen · reception · for the hosts only</p>
+    <h1>Guests</h1>
+    <p class="q-hint" id="who-am-i" hidden></p>
+  </header>
+
+  <!-- Sign in -->
+  <form class="panel signin" id="login" hidden novalidate>
+    <div class="q-field grow">
+      <label class="q-label" for="pass">Passphrase</label>
+      <input class="q-input" id="pass" type="password" autocomplete="current-password" required>
+    </div>
+    <button class="q-btn q-btn-primary" type="submit" id="login-btn">Sign in</button>
+    <p class="q-hint wide" id="login-hint" aria-live="polite">Each host has their own passphrase. Sessions last 30 days on this device.</p>
+  </form>
+
+  <div class="app" id="app" hidden>
+    <!-- Totals for the caterer -->
+    <section class="list">
+      <div class="list-head">
+        <h2>Who is coming</h2>
+        <div class="acts">
+          <a class="q-btn q-btn-small" id="csv" href="/api/host/export.csv" download>Export CSV</a>
+          <button class="q-btn q-btn-small" id="logout" type="button">Sign out</button>
+        </div>
+      </div>
+      <div class="q-stats" id="stats" aria-live="polite"></div>
+    </section>
+
+    <!-- Add guests -->
+    <form class="panel" id="add" novalidate>
+      <div class="q-field grow">
+        <label class="q-label" for="names">Add guests</label>
+        <textarea class="q-input area" id="names" rows="3" autocomplete="off" placeholder="One name per line, as they should be greeted, e.g. Kiran Roy"></textarea>
+      </div>
+      <fieldset class="q-field">
+        <legend class="q-label">Invited by</legend>
+        <div class="q-seg">
+          <label><input type="radio" name="from" id="from-k" value="k" checked><span>Kaif</span></label>
+          <label><input type="radio" name="from" id="from-j" value="j"><span>Jabeen</span></label>
+        </div>
+      </fieldset>
+      <button class="q-btn" id="add-btn" type="submit">Add</button>
+      <p class="q-hint wide" id="add-hint" aria-live="polite"></p>
+    </form>
+
+    <!-- The list -->
+    <section class="list">
+      <div class="q-seg filters" role="radiogroup" aria-label="Show">
+        <label><input type="radio" name="show" value="all" checked><span>All</span></label>
+        <label><input type="radio" name="show" value="k"><span>Kaif&rsquo;s</span></label>
+        <label><input type="radio" name="show" value="j"><span>Jabeen&rsquo;s</span></label>
+        <label><input type="radio" name="show" value="unsent"><span>Not sent</span></label>
+        <label><input type="radio" name="show" value="waiting"><span>No reply</span></label>
+        <label><input type="radio" name="show" value="yes"><span>Coming</span></label>
+        <label><input type="radio" name="show" value="no"><span>Regrets</span></label>
+      </div>
+      <div class="q-table-wrap">
+        <table class="q-table">
+          <thead><tr><th>Guest</th><th>Their link</th><th>Sent</th><th>Opened</th><th>Reply</th><th class="q-num">Seats</th><th>Plates</th><th>Their line</th><th>Your note</th><th><span class="sr">Remove</span></th></tr></thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+      <p class="q-hint" id="state">Loading…</p>
+    </section>
+
+    <!-- Replies from open links -->
+    <section class="list" id="open-section" hidden>
+      <h2>From open links</h2>
+      <p class="q-hint">People who replied from an open link rather than their own. Remove anything that is not a real guest.</p>
+      <div class="q-table-wrap">
+        <table class="q-table">
+          <thead><tr><th>Name</th><th>Says</th><th>Reply</th><th class="q-num">Seats</th><th>Plates</th><th>Their line</th><th>Replied</th><th><span class="sr">Remove</span></th></tr></thead>
+          <tbody id="open-rows"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- The day -->
+    <form class="panel event" id="event" novalidate>
+      <h2 class="wide">The day</h2>
+      <div class="q-field"><label class="q-label" for="ev-date">Date</label><input class="q-input" id="ev-date" type="date" required></div>
+      <div class="q-field"><label class="q-label" for="ev-nikah">Nikah</label><input class="q-input" id="ev-nikah" type="time"></div>
+      <div class="q-field"><label class="q-label" for="ev-reception">Reception</label><input class="q-input" id="ev-reception" type="time"></div>
+      <div class="q-field"><label class="q-label" for="ev-lunch">Lunch</label><input class="q-input" id="ev-lunch" type="time"></div>
+      <div class="q-field grow"><label class="q-label" for="ev-venue">Venue name</label><input class="q-input" id="ev-venue" maxlength="120" placeholder="Leave empty to show &ldquo;See it on the map&rdquo;"></div>
+      <div class="q-field grow"><label class="q-label" for="ev-maps">Map link</label><input class="q-input" id="ev-maps" type="url" spellcheck="false" placeholder="https://maps.app.goo.gl/…"></div>
+      <label class="sent wide"><input type="checkbox" id="ev-open"><span>Replies are open</span></label>
+      <button class="q-btn" id="ev-save" type="submit">Save the day</button>
+      <p class="q-hint wide" id="ev-hint" aria-live="polite">Changes show on every invite straight away. Empty times show as &ldquo;TBA&rdquo; (the nikah as &ldquo;Morning&rdquo;).</p>
+    </form>
+
+    <!-- Open links -->
+    <section class="panel">
+      <div class="open-links wide">
+        <p class="q-label">Open links, for someone not on the list</p>
+        <p class="q-hint">The page asks their name. Each link signs the card as the person who sends it. Replies land under &ldquo;From open links&rdquo;.</p>
+        <div class="acts">
+          <button class="q-btn q-btn-small" type="button" data-open="k">Copy Kaif&rsquo;s open link</button>
+          <button class="q-btn q-btn-small" type="button" data-open="j">Copy Jabeen&rsquo;s open link</button>
+        </div>
+      </div>
+      <p class="q-hint wide" id="preview-hint"></p>
+    </section>
+  </div>
+</main>

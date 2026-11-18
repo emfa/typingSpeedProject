@@ -1,0 +1,121 @@
+<!-- @dsCard group="Event" height=600 subtitle="Yes or no, seats, plates" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RSVPForm — preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri&family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="q-stage">
+  <form class="q-rsvp" id="form" novalidate>
+    <fieldset class="q-field">
+      <legend class="q-label">Will you be there, Priya?</legend>
+      <div class="q-seg">
+        <label><input type="radio" name="coming" value="yes"><span>Qubool hai, I&rsquo;m in</span></label>
+        <label><input type="radio" name="coming" value="no"><span>Can&rsquo;t make it</span></label>
+      </div>
+    </fieldset>
+    <div class="q-stack" id="more" hidden style="gap:var(--space-6)">
+      <div class="q-row">
+        <div class="q-field">
+          <span class="q-label" id="l-seats">Seats, including you</span>
+          <div class="q-step" role="group" aria-labelledby="l-seats">
+            <button type="button" data-step="seats" data-by="-1" aria-label="One seat fewer">&minus;</button>
+            <output id="seats">1</output>
+            <button type="button" data-step="seats" data-by="1" aria-label="One seat more">+</button>
+          </div>
+        </div>
+        <div class="q-field" id="split" hidden>
+          <span class="q-label" id="l-veg">Of those, vegetarian</span>
+          <div class="q-step" role="group" aria-labelledby="l-veg">
+            <button type="button" data-step="veg" data-by="-1" aria-label="One vegetarian plate fewer">&minus;</button>
+            <output id="veg">0</output>
+            <button type="button" data-step="veg" data-by="1" aria-label="One vegetarian plate more">+</button>
+          </div>
+        </div>
+      </div>
+      <fieldset class="q-field" id="one">
+        <legend class="q-label">Your lunch</legend>
+        <div class="q-seg" id="meal"></div>
+      </fieldset>
+      <p class="q-hint" id="plates" hidden></p>
+    </div>
+    <div class="q-field">
+      <label class="q-label" for="msg">A line for me (optional)</label>
+      <input class="q-input" id="msg" maxlength="140" placeholder="A dua, a roast, or an allergy" autocomplete="off">
+    </div>
+    <p class="q-echo" id="echo" aria-live="polite"></p>
+    <div><button class="q-btn q-btn-primary" id="send" type="submit" disabled>Send RSVP</button></div>
+  </form>
+  <div class="q-rsvp" id="done" hidden>
+    <p class="q-label">Recorded</p>
+    <p class="q-done" id="thanks" tabindex="-1"></p>
+    <p class="q-echo" id="receipt"></p>
+    <div><button class="q-btn" id="edit" type="button">Change my answer</button></div>
+  </div>
+</div>
+<script>
+(function () {
+  var Q = window.Qubool;
+  var MAX = 2, s = { coming: null, seats: 1, veg: 0, meal: null };
+  var $ = function (id) { return document.getElementById(id); };
+  $('meal').innerHTML =
+    '<label><input type="radio" name="meal" value="veg"><span><span class="q-meal q-meal-veg">' + Q.mealMark('veg') + 'Veg</span></span></label>' +
+    '<label><input type="radio" name="meal" value="nonveg"><span><span class="q-meal q-meal-nonveg">' + Q.mealMark('nonveg') + 'Non-veg</span></span></label>';
+  function plates() {
+    if (s.seats === 1) return { veg: s.meal === 'veg' ? 1 : 0, nonveg: s.meal === 'nonveg' ? 1 : 0 };
+    return { veg: s.veg, nonveg: s.seats - s.veg };
+  }
+  function command() {
+    if (!s.coming) return '';
+    if (s.coming === 'no') return ' <span class="q-flag">--regrets</span>';
+    var p = plates();
+    return ' <span class="q-flag">--qubool</span> --seats ' + s.seats + ' --veg ' + p.veg + ' --nonveg ' + p.nonveg;
+  }
+  function ready() { return s.coming === 'no' || (s.coming === 'yes' && (s.seats > 1 || s.meal)); }
+  function render() {
+    var yes = s.coming === 'yes', p = plates();
+    $('more').hidden = !yes;
+    $('split').hidden = s.seats === 1;
+    $('one').hidden = s.seats !== 1;
+    $('plates').hidden = s.seats === 1;
+    $('plates').innerHTML = '<span class="q-plates"><span class="q-meal q-meal-veg">' + Q.mealMark('veg') + p.veg + ' veg</span><span class="q-meal q-meal-nonveg">' + Q.mealMark('nonveg') + p.nonveg + ' non-veg</span></span>';
+    $('seats').textContent = s.seats; $('veg').textContent = s.veg;
+    document.querySelectorAll('[data-step]').forEach(function (b) {
+      var k = b.dataset.step, by = +b.dataset.by, v = s[k] + by;
+      b.disabled = k === 'seats' ? (v < 1 || v > MAX) : (v < 0 || v > s.seats);
+    });
+    $('echo').innerHTML = '<span class="q-p">$</span> rsvp' + (command() || ' <span style="color:var(--term-dim)"># waiting for your answer</span>');
+    $('send').disabled = !ready();
+  }
+  $('form').addEventListener('change', function (e) {
+    if (e.target.name === 'coming') s.coming = e.target.value;
+    if (e.target.name === 'meal') s.meal = e.target.value;
+    render();
+  });
+  $('form').addEventListener('click', function (e) {
+    var b = e.target.closest('[data-step]'); if (!b) return;
+    s[b.dataset.step] += +b.dataset.by;
+    if (s.veg > s.seats) s.veg = s.seats;
+    render();
+  });
+  $('form').addEventListener('submit', function (e) {
+    e.preventDefault(); if (!ready()) return;
+    $('form').hidden = true; $('done').hidden = false;
+    $('thanks').textContent = s.coming === 'yes' ? 'See you on the 26th, insha\u2019Allah.' : 'You will be missed. Thank you for telling me.';
+    $('receipt').innerHTML = '<span class="q-p">$</span> rsvp' + command() + '<br><span style="color:var(--term-green)">200 ok</span> <span style="color:var(--term-dim)">saved for priya-nair-' + Q.sha('Priya Nair').slice(0, 4) + '</span>';
+    $('thanks').focus();
+  });
+  $('edit').addEventListener('click', function () { $('done').hidden = true; $('form').hidden = false; });
+  render();
+})();
+</script>
+</body>
+</html>

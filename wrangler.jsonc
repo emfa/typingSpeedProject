@@ -1,0 +1,31 @@
+// Cloudflare Worker for the Kaif & Jabeen reception invite.
+// One Worker serves the guest pages, the host console and the API; D1 holds guests and replies.
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "kaif-jabeen",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-11-01",
+  // Builds dist/invite.html and dist/host.html, which the Worker imports as text.
+  "build": { "command": "node scripts/build.mjs", "watch_dir": ["src", "design-system/project/components", "design-system/project/tokens.json"] },
+  // Plain files (preview image, favicon, robots.txt). Anything not found here goes to the Worker.
+  "assets": { "directory": "./static", "html_handling": "none", "not_found_handling": "none" },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "kaif-jabeen",
+      // Paste the ID shown when you create the database (see README, step 2).
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  // The domain is on this Cloudflare account; deploy attaches it. www redirects to the bare domain (worker/index.js).
+  "routes": [
+    { "pattern": "kaifwedsjabeen.in", "custom_domain": true },
+    { "pattern": "www.kaifwedsjabeen.in", "custom_domain": true }
+  ],
+  "vars": { "CANONICAL_HOST": "kaifwedsjabeen.in" },
+  "observability": { "enabled": true },
+  "workers_dev": true,
+  // Preview builds would write to the same database as the live site, so they are off.
+  "preview_urls": false
+}

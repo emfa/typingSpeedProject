@@ -1,0 +1,72 @@
+<!-- @dsCard group="Host" height=680 subtitle="Who is coming, and how many plates" -->
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GuestTable — preview</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri&family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+
+</style>
+</head>
+<body>
+<div class="q-stage">
+  <section class="q-host">
+    <div class="q-host-head">
+      <h2>Who is coming</h2>
+      <button class="q-btn" id="csv" type="button">Export CSV</button>
+    </div>
+    <div class="q-stats" id="stats"></div>
+    <div class="q-table-wrap">
+      <table class="q-table">
+        <thead><tr><th>Guest</th><th>From</th><th>Answer</th><th class="q-num">Seats</th><th>Plates</th><th>Replied</th><th>Note</th></tr></thead>
+        <tbody id="rows"></tbody>
+      </table>
+    </div>
+  </section>
+</div>
+<script>
+(function () {
+  var Q = window.Qubool;
+  var ROWS = [
+    { name: 'Priya Nair', from: 'k', answer: 'yes', seats: 2, veg: 1, at: '12 Dec, 09:14', msg: 'Mubarak! Saving room for seconds.' },
+    { name: 'Rahul Mehta', from: 'k', answer: 'yes', seats: 4, veg: 4, at: '12 Dec, 11:02', msg: 'Bringing the family.' },
+    { name: 'Sneha Iyer', from: 'j', answer: 'yes', seats: 1, veg: 1, at: '13 Dec, 18:40', msg: '' },
+    { name: 'Imran Shaikh', from: 'k', answer: 'yes', seats: 2, veg: 0, at: '13 Dec, 20:21', msg: 'Is there haleem?' },
+    { name: 'Arjun Rao', from: 'k', answer: 'no', seats: 0, veg: 0, at: '14 Dec, 08:05', msg: 'Travelling. Duas from Pune.' },
+    { name: 'Fatima Khan', from: 'j', answer: 'yes', seats: 2, veg: 0, at: '14 Dec, 13:37', msg: '' },
+    { name: 'Vikram Singh', from: 'k', answer: null, seats: 0, veg: 0, at: '', msg: '' },
+    { name: 'Ananya Das', from: 'j', answer: null, seats: 0, veg: 0, at: '', msg: '' }
+  ];
+  var t = { invited: ROWS.length, yes: 0, seats: 0, veg: 0, nonveg: 0, waiting: 0 };
+  ROWS.forEach(function (r) {
+    if (r.answer === 'yes') { t.yes++; t.seats += r.seats; t.veg += r.veg; t.nonveg += r.seats - r.veg; }
+    if (r.answer === null) t.waiting++;
+  });
+  document.getElementById('stats').innerHTML = [
+    [t.seats, 'Seats to set'], [t.veg, 'Veg plates'], [t.nonveg, 'Non-veg plates'], [t.yes + ' / ' + t.invited, 'Said yes'], [t.waiting, 'Yet to reply']
+  ].map(function (x) { return '<div class="q-stat"><b>' + x[0] + '</b><span class="q-label">' + x[1] + '</span></div>'; }).join('');
+  document.getElementById('rows').innerHTML = ROWS.map(function (r) {
+    var answer = r.answer === 'yes' ? '<span class="q-tag q-tag-on">Coming</span>' : r.answer === 'no' ? '<span class="q-tag">Regrets</span>' : '<span class="q-quiet">no reply yet</span>';
+    var plates = r.answer === 'yes'
+      ? '<span class="q-plates">' + (r.veg ? '<span class="q-meal q-meal-veg">' + Q.mealMark('veg') + r.veg + '</span>' : '') + (r.seats - r.veg ? '<span class="q-meal q-meal-nonveg">' + Q.mealMark('nonveg') + (r.seats - r.veg) + '</span>' : '') + '</span>'
+      : '<span class="q-quiet">\u2013</span>';
+    return '<tr><td class="q-who">' + Q.esc(r.name) + '</td><td class="q-quiet">' + Q.senders[r.from] + '</td><td>' + answer + '</td><td class="q-num">' + (r.answer === 'yes' ? r.seats : '<span class="q-quiet">\u2013</span>') + '</td><td>' + plates + '</td><td class="q-quiet">' + (r.at || '\u2013') + '</td><td class="q-quiet">' + (Q.esc(r.msg) || '\u2013') + '</td></tr>';
+  }).join('');
+  document.getElementById('csv').addEventListener('click', function () {
+    var q = function (v) { return '"' + String(v).replace(/"/g, '""') + '"'; };
+    var csv = [['guest', 'from', 'answer', 'seats', 'veg', 'nonveg', 'replied', 'note'].join(',')].concat(ROWS.map(function (r) {
+      return [q(r.name), Q.senders[r.from], r.answer || 'pending', r.seats, r.veg, r.answer === 'yes' ? r.seats - r.veg : 0, q(r.at), q(r.msg)].join(',');
+    })).join('\n');
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = 'rsvps.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+})();
+</script>
+</body>
+</html>
