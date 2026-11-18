@@ -65,8 +65,8 @@
 
   /* ---------- totals ---------- */
   function totals() {
-    var t = { invited: data.guests.length + data.open.length, yes: 0, seats: 0, veg: 0, nonveg: 0, waiting: 0, quiet: 0 };
-    data.guests.concat(data.open.map(function (o) { return { rsvp: o }; })).forEach(function (g) {
+    var t = { invited: data.guests.length, yes: 0, seats: 0, veg: 0, nonveg: 0, waiting: 0, quiet: 0 };
+    data.guests.forEach(function (g) {
       var r = g.rsvp;
       if (!r) { t.waiting++; if (g.opens) t.quiet++; return; }
       if (r.coming === 'yes') { t.yes++; t.seats += r.seats; t.veg += r.veg; t.nonveg += r.nonveg; }
@@ -128,16 +128,6 @@
       : !list.length ? 'Nobody in this view.'
       : list.length + (list.length === 1 ? ' guest shown.' : ' guests shown.') + ' Refreshes every 30 seconds.';
 
-    $('open-section').hidden = !data.open.length;
-    var orows = $('open-rows'); orows.textContent = '';
-    data.open.forEach(function (o) {
-      var tr = document.createElement('tr'); tr.dataset.id = o.id;
-      tr.innerHTML = '<td class="q-who"></td><td class="q-quiet">' + SENDERS[o.from] + ' invited me</td>' + replyCells(o) +
-        '<td class="q-quiet">' + Q.esc(when(o.updatedAt)) + '</td>' +
-        '<td><button class="q-btn q-btn-small' + (arming === o.id ? ' q-btn-danger' : '') + '" type="button" data-act="remove-open">' + (arming === o.id ? 'Confirm remove' : 'Remove') + '</button></td>';
-      tr.querySelector('.q-who').textContent = o.name;
-      orows.appendChild(tr);
-    });
   }
   function noteEditor(g) {
     var tr = document.createElement('tr'); tr.className = 'note-row';
@@ -188,19 +178,7 @@
     var code = e.target.closest('tr').dataset.code, checked = e.target.checked;
     api('PATCH', '/api/host/guests/' + code, { sent: checked }).then(function () { return load(false); }, function (err) { e.target.checked = !checked; $('state').textContent = say(err); });
   });
-  $('open-rows').addEventListener('click', function (e) {
-    var el = e.target.closest('[data-act="remove-open"]'); if (!el) return;
-    var id = el.closest('tr').dataset.id;
-    if (arming !== id) return arm(id);
-    arming = null;
-    api('DELETE', '/api/host/replies/' + id).then(function () { return load(false); }, function () {});
-  });
   document.querySelector('.filters').addEventListener('change', function (e) { show = e.target.value; render(); });
-  document.querySelector('.open-links').addEventListener('click', function (e) {
-    var b = e.target.closest('[data-open]'); if (!b) return;
-    copy(data.origin + '/' + b.dataset.open, b);
-  });
-
   // One name per line, or the JSON exported from the old console: [{ "name": "…", "from": "k", "line": 2 }, …]
   function parseNames(text, from) {
     var t = text.trim();

@@ -2,9 +2,9 @@
 // Files in static/ are served before this runs; everything else arrives here.
 import { json, text, fail, readJson } from './util.js';
 import {
-  CODE, getGuest, getEvent, guestPage, openPage, countOpen, isTerminal, terminalInvite, terminalReceipt, curlError, calendarFile,
+  CODE, getGuest, getEvent, guestPage, notFoundPage, countOpen, isTerminal, terminalInvite, terminalReceipt, curlError, calendarFile,
 } from './guest.js';
-import { OPEN_ID, replyForGuest, createOpenReply, updateOpenReply, publicReply, repliesOpen } from './rsvp.js';
+import { replyForGuest, publicReply, repliesOpen } from './rsvp.js';
 import { hostRoute } from './host.js';
 
 const CSP = [
@@ -29,8 +29,6 @@ function secure(res) {
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
 }
 
-const PRESETS = { '/k': 'k', '/kaif': 'k', '/j': 'j', '/jabeen': 'j' };
-
 async function route(request, env, ctx) {
   // HEAD is answered as GET (the runtime drops the body); some link-preview robots only send HEAD.
   const url = new URL(request.url), path = url.pathname, method = request.method === 'HEAD' ? 'GET' : request.method;
@@ -49,36 +47,18 @@ async function route(request, env, ctx) {
 
   if (path === '/host' || path === '/host/' || path.startsWith('/api/host/')) return hostRoute(env, request, url);
 
-  /* ---------- guest API ---------- */
-  if (path === '/api/rsvp/open' && method === 'POST') {
-    const body = await readJson(request);
-    if (body.error) return fail(400, body.error);
-    const r = await createOpenReply(env, request, body.value);
-    return r.error ? fail(r.status, r.error) : json({ id: r.id, rsvp: publicReply(r.reply) });
-  }
+  // The home page is the hosts' console. Guests only ever arrive on their own link.
+  if (path === '/' && method === 'GET') return Response.redirect(url.origin + '/host', 302);
+
+  /* ---------- guest API: only a guest on the list can reply, with their own code ---------- */
   let m = /^\/api\/rsvp\/([a-z0-9-]+)$/.exec(path);
   if (m) {
-    const id = m[1];
-    if (OPEN_ID.test(id)) {
-      if (method === 'GET') {
-        const row = await env.DB.prepare('SELECT * FROM rsvps WHERE id = ? AND guest_code IS NULL').bind(id).first();
-        return row ? json({ rsvp: publicReply(row), repliesOpen: await repliesOpen(env) }) : fail(404, 'not_found');
-      }
-      if (method === 'PUT') {
-        const body = await readJson(request);
-        if (body.error) return fail(400, body.error);
-        const r = await updateOpenReply(env, id, body.value);
-        return r.error ? fail(r.status, r.error) : json({ rsvp: publicReply(r.reply) });
-      }
-    } else if (CODE.test(id) && method === 'PUT') {
-      const guest = await getGuest(env, id);
-      if (!guest) return fail(404, 'not_found');
-      const body = await readJson(request);
-      if (body.error) return fail(400, body.error);
-      const r = await replyForGuest(env, guest, body.value, body.value.via);
-      return r.error ? fail(r.status, r.error) : json({ rsvp: publicReply(r.reply) });
-    }
-    return fail(404, 'not_found');
+    const guest = CODE.test(m[1]) && method === 'PUT' ? await getGuest(env, m[1]) : null;
+    if (!guest) return fail(404, 'not_found');
+    const body = await readJson(request);
+    if (body.error) return fail(400, body.error);
+    const r = await replyForGuest(env, guest, body.value, body.value.via);
+    return r.error ? fail(r.status, r.error) : json({ rsvp: publicReply(r.reply) });
   }
 
   /* ---------- preview images ---------- */
@@ -88,12 +68,6 @@ async function route(request, env, ctx) {
     if (!row) return Response.redirect(url.origin + '/og.jpg', 302);
     return new Response(new Uint8Array(row.image), { headers: { 'content-type': 'image/jpeg', 'cache-control': 'public, max-age=3600' } });
   }
-
-  /* ---------- calendar ---------- */
-  if (path === '/invite.ics' && method === 'GET') return ics(await getEvent(env), null);
-
-  /* ---------- open links ---------- */
-  if (method === 'GET' && (path === '/' || PRESETS[path])) return openPage(env, url, PRESETS[path] || null);
 
   /* ---------- a guest's own link ---------- */
   m = /^\/([a-z0-9-]+)(\/rsvp|\/invite\.ics)?\/?$/.exec(path);
@@ -113,9 +87,10 @@ async function route(request, env, ctx) {
     return fail(405, 'method');
   }
 
+  // Anything else, including a mistyped or altered code: no invite here.
   if (method !== 'GET') return fail(404, 'not_found');
-  if (isTerminal(request.headers.get('user-agent'))) return text('No invite at this address. Check the link you were sent.\n', 404);
-  return openPage(env, url, null, { status: 404, notFound: true });
+  if (isTerminal(request.headers.get('user-agent'))) return text('Invite not found. Please check the link you were sent.\n', 404);
+  return notFoundPage(url);
 }
 
 function ics(event, link) {

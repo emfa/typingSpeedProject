@@ -6,7 +6,7 @@ Taken on 18 November 2026 by `npm test` (the files land in `tests/out/`). Compar
 | --- | --- |
 | `invite-personal-phone-light.png` | A personal link at 390px, light theme, with a personal note, before replying |
 | `invite-personal-desktop-dark.png` | The same guest at 1100px, dark theme, after replying from the terminal and then changing to regrets |
-| `invite-open-j-phone-light.png` | Jabeen's open link (`/j`) at 390px, after the guest typed their name and replied; on return they are recognised |
+| `invite-not-found-phone.png` | Any address that is not a guest's link (here an altered code) at 390px: “Invite not found” |
 | `invite-timed-phone-light.png` | A personal link at 390px with sample times and venue set, the calendar menu open, and a saved reply |
 | `host-desktop-dark.png`, `host-phone-dark.png` | The host console with the test database's guests and replies |
 | `design-system/ds-<Component>-<theme>.png` | Every design-system preview in the night and day themes (from 17 November) |

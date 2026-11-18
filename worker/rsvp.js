@@ -1,8 +1,6 @@
-// Replies: validation, saving with history, and open-link replies.
+// Replies: validation and saving, with the full history in rsvp_log. Only guests on the list can reply.
 import { MAX_SEATS } from './qubool.js';
-import { now, randomId, cleanLine, throttled, ipBucket } from './util.js';
-
-export const OPEN_ID = /^o-[a-z0-9]{16}$/;
+import { now, cleanLine } from './util.js';
 
 // Turns what a guest sent (JSON from the page, or form fields from curl) into a clean answer, or an error code.
 export function parseAnswer(input) {
@@ -59,33 +57,5 @@ export async function replyForGuest(env, guest, input, via) {
   const parsed = parseAnswer(input);
   if (parsed.error) return { status: 400, error: parsed.error };
   const reply = await saveReply(env, { id: guest.code, guestCode: guest.code, name: guest.name, sender: guest.sender, answer: parsed.value, via: viaOf(via) });
-  return { reply };
-}
-
-// A first reply from an open link: needs a name and who invited them, and gets a private id.
-export async function createOpenReply(env, request, input) {
-  if (!(await repliesOpen(env))) return { status: 403, error: 'closed' };
-  const name = cleanLine(input.name, 60);
-  if (!name || !/[\p{L}\p{N}]/u.test(name)) return { status: 400, error: 'name_required' };
-  if (input.from !== 'k' && input.from !== 'j') return { status: 400, error: 'from_required' };
-  const parsed = parseAnswer(input);
-  if (parsed.error) return { status: 400, error: parsed.error };
-  // 20 new open-link replies an hour from one address is far more than any family needs.
-  if (await throttled(env, await ipBucket(env, request, 'open'), 20, 3600000, true)) return { status: 429, error: 'slow_down' };
-  const id = 'o-' + randomId(16);
-  const reply = await saveReply(env, { id, guestCode: null, name, sender: input.from, answer: parsed.value, via: viaOf(input.via) });
-  return { reply, id };
-}
-
-export async function updateOpenReply(env, id, input) {
-  if (!(await repliesOpen(env))) return { status: 403, error: 'closed' };
-  const existing = await env.DB.prepare('SELECT * FROM rsvps WHERE id = ? AND guest_code IS NULL').bind(id).first();
-  if (!existing) return { status: 404, error: 'not_found' };
-  const name = input.name === undefined ? existing.name : cleanLine(input.name, 60);
-  if (!name || !/[\p{L}\p{N}]/u.test(name)) return { status: 400, error: 'name_required' };
-  const sender = input.from === 'k' || input.from === 'j' ? input.from : existing.sender;
-  const parsed = parseAnswer(input);
-  if (parsed.error) return { status: 400, error: parsed.error };
-  const reply = await saveReply(env, { id, guestCode: null, name, sender, answer: parsed.value, via: viaOf(input.via) });
   return { reply };
 }

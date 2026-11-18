@@ -19,7 +19,8 @@ Part of the fun, for an audience of engineers:
 ```
 browser ── Cloudflare Worker (worker/) ── D1 database (migrations/)
              ├─ /<code>             a guest's invite, their data and preview baked in
-             ├─ /, /k, /j           open links: asks the name (and who invited them)
+             ├─ /                   redirects to /host
+             ├─ anything else       “Invite not found” (404), with no guest's details
              ├─ /api/rsvp/…         save or change a reply
              ├─ /<code>/rsvp        the same, for curl
              ├─ /<code>/invite.ics  calendar file
@@ -80,7 +81,7 @@ Before sending links, open one in a private window, and paste one into a WhatsAp
 - **Replies:** they appear as they arrive, and the page refreshes every 30 seconds. The totals at the top are what the caterer needs.
 - **Export CSV:** downloads every guest and reply.
 - **Close replies:** untick **Replies are open** when the caterer needs final numbers.
-- **Open links:** `/k` and `/j` are for someone not on the list. They sign the card as Kaif or Jabeen, and the page asks the person's name. Replies land under **From open links**.
+- **Invite only:** there are no open links. Someone not on the list gets added in the console and sent their own link; any other address shows “Invite not found”.
 
 ## Working on it
 

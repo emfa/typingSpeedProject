@@ -1,6 +1,7 @@
 // What a guest gets: the invite page (with their data and link preview baked in), a plain-text
 // invite for curl, and a calendar file.
 import inviteHtml from '../dist/invite.html';
+import missingHtml from '../dist/missing.html';
 import { Q, SENDERS, MAX_SEATS } from './qubool.js';
 import { html, text, escapeHtml, scriptJson, now } from './util.js';
 import { publicReply, repliesOpen } from './rsvp.js';
@@ -76,12 +77,10 @@ export async function guestPage(env, url, guest, { status = 200 } = {}) {
   return html(fill(data, head({ title: `${Q.first(guest.name)}, you’re invited · Kaif & Jabeen`, description: describe(event), image, url: `${url.origin}/${guest.code}` })), status);
 }
 
-// An open link: / asks the name and who invited them; /k and /j already know the sender.
-export async function openPage(env, url, preset, { status = 200, notFound = false } = {}) {
-  const [event, open] = await Promise.all([getEvent(env), repliesOpen(env)]);
-  const data = { mode: 'open', preset, notFound, event, repliesOpen: open, maxSeats: MAX_SEATS, host: url.host };
-  const title = preset ? `${SENDERS[preset]} invites you · Kaif & Jabeen` : 'Kaif & Jabeen · Reception';
-  return html(fill(data, head({ title, description: describe(event), image: `${url.origin}/og.jpg`, url: url.origin + url.pathname })), status);
+// Any address that is not a guest's own link. Nothing about any guest is on this page.
+export function notFoundPage(url) {
+  const tags = '<title>Invite not found · Kaif &amp; Jabeen</title>\n<meta property="og:title" content="Invite not found">\n<meta property="og:image" content="' + escapeHtml(url.origin + '/og.jpg') + '">';
+  return html(missingHtml.replace('<!--HEAD-->', () => tags).replace('/*DATA*/null', () => scriptJson({ host: url.host })), 404);
 }
 
 // Counts a visit, unless it is a link-preview robot.

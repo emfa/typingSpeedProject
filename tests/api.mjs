@@ -59,15 +59,15 @@ export async function run(base) {
   r = await anon.put('/api/rsvp/k-nobody-abcdef', { coming: 'no' });
   t.ok(r.status === 404, 'a reply for a code not on the list is refused');
 
-  // Open-link replies
-  r = await anon.post('/api/rsvp/open', { name: 'Rahul Mehta', from: 'j', coming: 'yes', seats: 4, veg: 4 });
-  const openId = r.data.id;
-  t.ok(r.status === 200 && /^o-[a-z0-9]{16}$/.test(openId || ''), 'an open-link reply gets a private id', r.data);
-  t.ok((await anon.post('/api/rsvp/open', { name: 'Rahul', coming: 'no' })).data.error === 'from_required', 'an open-link reply needs who invited them');
-  r = await anon.put('/api/rsvp/' + openId, { coming: 'yes', seats: 3, veg: 1, name: 'Rahul Mehta' });
-  t.ok(r.data.rsvp?.seats === 3 && r.data.rsvp.changes === 1, 'the open-link guest can change their answer with their id');
-  t.ok((await anon.get('/api/rsvp/' + openId)).data.rsvp?.name === 'Rahul Mehta', 'their saved reply can be read back with the id');
-  t.ok((await anon.put('/api/rsvp/o-aaaaaaaaaaaaaaaa', { coming: 'no' })).status === 404, 'a made-up open id is refused');
+  // No open links: only a guest's own code opens an invite or takes a reply
+  t.ok((await anon.post('/api/rsvp/open', { name: 'Rahul Mehta', from: 'j', coming: 'yes', seats: 4, veg: 4 })).status === 404, 'there is no open-link reply endpoint');
+  t.ok((await anon.put('/api/rsvp/o-aaaaaaaaaaaaaaaa', { coming: 'no' })).status === 404, 'an open-link style id is refused');
+  for (const path of ['/k', '/j', '/jabeen', '/invite.ics', '/' + priya.code + 'x']) {
+    r = await anon.get(path);
+    t.ok(r.status === 404 && r.data.includes('Invite not found') && !r.data.includes('Priya'), `${path} is “Invite not found”`, r.status);
+  }
+  r = await fetch(base + '/', { redirect: 'manual' });
+  t.ok(r.status === 302 && r.headers.get('location').endsWith('/host'), 'the home page redirects to /host', r.headers.get('location'));
 
   // curl
   r = await fetch(base + '/' + priyaJ.code + '?plain', { headers: { 'user-agent': 'curl/8.5.0' } });
@@ -113,14 +113,13 @@ export async function run(base) {
   r = await host.get('/api/host/state');
   const p = r.data.guests.find((g) => g.code === priya.code);
   t.ok(p && p.sentAt && p.opens >= 1 && p.rsvp?.coming === 'no' && p.previewAt, 'host state shows sent, opened, reply and preview', p);
-  t.ok(r.data.open.some((o) => o.id === openId && o.name === 'Rahul Mehta' && o.from === 'j'), 'host state lists the open-link reply');
+  t.ok(!('open' in r.data), 'host state has no open-link replies');
   r = await host.get('/api/host/export.csv');
-  t.ok(r.headers.get('content-type').startsWith('text/csv') && r.data.includes('Priya Nair,Kaif,no,') && r.data.includes('Rahul Mehta,Jabeen,yes,3,1,2'), 'the CSV has guests and open-link replies', r.data.slice(0, 300));
+  t.ok(r.headers.get('content-type').startsWith('text/csv') && r.data.includes('Priya Nair,Kaif,no,') && r.data.includes('Priya Nair,Jabeen,yes,2,2,0'), 'the CSV has every guest’s reply', r.data.slice(0, 300));
   await host.post('/api/host/guests', { entries: [{ name: '=HYPERLINK("x")', from: 'j' }] });
   t.ok((await host.get('/api/host/export.csv')).data.includes(`"'=HYPERLINK(""x"")"`), 'a name that looks like a formula is defused in the CSV');
   t.ok((await host.del('/api/host/guests/' + priya.code)).status === 200, 'a guest can be removed');
   t.ok((await anon.get('/api/rsvp/' + priya.code)).status === 404 && (await host.get('/api/host/state')).data.guests.every((g) => g.code !== priya.code), 'and their reply goes with them');
-  t.ok((await host.del('/api/host/replies/' + openId)).status === 200, 'an open-link reply can be removed');
 
   // Signing out, then the lockout (last, since it locks this address)
   await host.post('/api/host/logout');

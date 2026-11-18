@@ -6,6 +6,7 @@ Read `README.md` first: it describes the Worker, the database, the console and t
 - **Design system:** `design-system/project/` is the source for look and voice. Read its `README.md` before writing copy or styles, and use its tokens and components.
   - It is also published as the "Qubool" design-system artifact (https://claude.ai/artifact/CgKJn3DNgiLfmCqsXJfT1s). If you change it, republish that too.
 - **One-liners** are `LINES` in `bundle.js`. Only append; never reorder, edit or remove a line. Each guest's `line` column points at a line by position.
+- **Invite only:** no open links. Only a code in the `guests` table opens an invite or takes a reply; `/` redirects to `/host`; every other address is the not-found page (`src/missing.*`). The design system's docs still describe the old `#k` / `#j` open links.
 - **Guest codes** are minted by the Worker (`<k|j>-<name-slug>-<6 random>`), never by hand. Once a link is sent, its code must never change.
 - **Builds:** `dist/` is build output. Edit `src/`, then run `node scripts/build.mjs`; `wrangler dev` and deploy run it too.
 - **Tests:** run `npm test` before pushing, and compare `tests/out/` with `tests/baseline/`.

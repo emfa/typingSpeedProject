@@ -55,10 +55,10 @@ export async function run(base) {
     await p.reload(); await p.waitForSelector('#app:not([hidden])');
     // Other suites share this database, so the expected totals come from the API's own numbers.
     s = (await api.get('/api/host/state')).data;
-    const yes = s.guests.map((g) => g.rsvp).concat(s.open).filter((r) => r && r.coming === 'yes');
+    const yes = s.guests.map((g) => g.rsvp).filter((r) => r && r.coming === 'yes');
     const sum = (k) => yes.reduce((n, r) => n + r[k], 0);
     const stats = (await p.locator('#stats').innerText()).replace(/\s+/g, ' ');
-    t.ok(stats.toUpperCase().startsWith(`${sum('seats')} SEATS TO SET ${sum('veg')} VEG PLATES ${sum('nonveg')} NON-VEG PLATES ${yes.length} / ${s.guests.length + s.open.length} SAID YES`), 'totals add up seats, plates and yeses', stats);
+    t.ok(stats.toUpperCase().startsWith(`${sum('seats')} SEATS TO SET ${sum('veg')} VEG PLATES ${sum('nonveg')} NON-VEG PLATES ${yes.length} / ${s.guests.length} SAID YES`), 'totals add up seats, plates and yeses', stats);
     t.ok((await p.locator(`tr[data-code="${vikram.code}"] .sent span`).innerText()) === 'sent' && (await p.locator(`tr[data-code="${vikram.code}"]`).innerText()).includes('COMING'), 'the row shows sent and the reply');
     await p.locator('label:has(input[value=waiting])').click();
     t.ok((await p.locator('tr[data-code]').count()) === s.guests.filter((g) => !g.rsvp).length && !(await p.locator(`tr[data-code="${vikram.code}"]`).count()), 'No reply shows only guests without a reply');

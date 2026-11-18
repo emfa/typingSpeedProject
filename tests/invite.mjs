@@ -37,7 +37,7 @@ export async function run(base) {
     t.ok((await p.locator('#note').innerText()).includes('worst pull requests'), 'their personal note is on the card');
     t.ok((await p.locator('#hash').textContent()) === (await p.evaluate(() => Qubool.sha('Arjun'))), 'the invite hash comes from their name');
     t.ok((await p.locator('#out').innerText()).includes('ssh arjun@kaifwedsjabeen.in'), 'the terminal logs in at the real host name');
-    t.ok(await p.locator('#who-field').isHidden() && await p.locator('#from-field').isHidden(), 'a personal link asks neither name nor sender');
+    t.ok(!(await p.locator('#who').count()) && !(await p.locator('[name=from]').count()), 'the invite asks neither name nor sender: the link says who they are');
     t.ok(await noSideScroll(p), 'no sideways scroll at 390px');
     await p.screenshot({ path: OUT + '/invite-personal-phone-light.png', fullPage: true });
 
@@ -92,42 +92,29 @@ export async function run(base) {
     t.ok((await p.locator('#sign').innerText()) === '— Jabeen' && (await p.evaluate(() => Qubool.lines.j)).includes((await p.locator('#ps').innerText()).slice(5)), 'Jabeen’s guest gets her voice and her lines');
     await ctx.close();
 
-    /* 6. /j: an open link that knows the sender */
-    ({ p, ctx } = await open('/j', { phone: true, light: true }));
-    t.ok((await p.locator('#prompt').innerText()) === 'name:', '/j asks only the name');
-    await term(p, 'Fatima Khan');
-    await p.waitForSelector('#shell:not([hidden])');
-    t.ok((await p.locator('#sign').innerText()) === '— Jabeen' && (await p.locator('#greet').innerText()) === 'Assalamu alaikum, Fatima.', 'then the card is Jabeen’s, greeting them');
-    t.ok(await p.locator('#who-field').isVisible() && (await p.inputValue('#who')) === 'Fatima Khan' && await p.locator('#from-field').isHidden(), 'the form has their name and does not ask the sender');
-    await p.locator('label:has(#coming-yes)').click(); await p.locator('label:has(#meal-veg)').click();
-    await p.click('#send'); await p.waitForSelector('#done:not([hidden])');
-    const openReply = (await host.get('/api/host/state')).data.open.find((o) => o.name === 'Fatima Khan');
-    t.ok(openReply && openReply.from === 'j' && openReply.veg === 1, 'the open-link reply reaches the host under Jabeen', openReply);
-    await p.reload(); await p.waitForSelector('#shell:not([hidden])'); await p.waitForTimeout(400);
-    t.ok((await p.locator('#greet').innerText()) === 'Assalamu alaikum, Fatima.' && await p.locator('#done').isVisible(), 'coming back on the same device, they are recognised with their reply');
-    await p.screenshot({ path: OUT + '/invite-open-j-phone-light.png', fullPage: true });
-    await ctx.close();
-
-    /* 7. Bare /: asks the name, then who invited them */
-    ({ p, ctx } = await open('/'));
-    t.ok((await p.locator('#sign').innerText()) === '— Kaif & Jabeen' && (await p.locator('#invite-text').innerText()).startsWith('We are getting married'), 'before anyone says, the card speaks as both');
-    await term(p, 'Zainab Ali');
-    t.ok((await p.locator('#prompt').innerText()) === 'invited by:', 'then it asks who invited them');
-    await term(p, 'my cousin');
-    t.ok((await lastLines(p, 1)) === 'Type kaif or jabeen.', 'a wrong answer is refused');
-    await term(p, 'kaif');
-    await p.waitForSelector('#shell:not([hidden])');
-    t.ok((await p.locator('#sign').innerText()) === '— Kaif', 'kaif signs the card as Kaif');
-    await ctx.close();
-
-    /* 8. A link not on the list, and an old claude.ai-style link */
-    let code404;
-    ({ p, ctx, status: code404 } = await open('/k-nobody-zzzzzz'));
-    t.ok(code404 === 404 && (await p.locator('#out').innerText()).includes('no invite at this address'), 'an unknown code says so, with a 404');
-    await ctx.close();
-    ({ p, ctx } = await open('/#j'));
-    t.ok(new URL(p.url()).pathname === '/j', 'an old #j link moves to /j', p.url());
-    await ctx.close();
+    /* 6. Only a guest's own link opens an invite */
+    const lost = async (path, setup) => {
+      const c = await b.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'reduce' });
+      const pg = await c.newPage();
+      pg.on('pageerror', (e) => errors.push(path + ': ' + e.message));
+      if (setup) await pg.addInitScript(setup);
+      const res = await pg.goto(base + path);
+      return { pg, c, status: res.status(), html: await pg.content() };
+    };
+    const altered = arjun.code.slice(0, -1) + (arjun.code.endsWith('a') ? 'b' : 'a');
+    for (const path of ['/k', '/j', '/kaif', '/' + altered, '/some-random-page', '/k-nobody-zzzzzz']) {
+      const r = await lost(path);
+      const ok = r.status === 404 && (await r.pg.locator('h1').innerText()) === 'Invite not found' && (await r.pg.locator('#out').innerText()).includes('not found');
+      t.ok(ok && !r.html.includes('Arjun') && !r.html.includes('worst pull requests'), `${path === '/' + altered ? 'an altered code' : path}: “Invite not found”, with no guest’s details`, r.status);
+      await r.c.close();
+    }
+    // The bug this replaces: a device that had used an open link was greeted as that old reply on any wrong link.
+    const r6 = await lost('/' + altered, () => localStorage.setItem('qubool:open', JSON.stringify({ id: 'o-aaaaaaaaaaaaaaaa', name: 'Old Test', from: 'k' })));
+    t.ok(!r6.html.includes('Old Test') && (await r6.pg.evaluate(() => localStorage.getItem('qubool:open'))) === null, 'a remembered open-link reply is ignored and forgotten');
+    await r6.pg.screenshot({ path: OUT + '/invite-not-found-phone.png', fullPage: true });
+    await r6.c.close();
+    const home = await fetch(base + '/', { redirect: 'manual' });
+    t.ok(home.status === 302 && new URL(home.headers.get('location'), base).pathname === '/host', 'the home page goes to the host console', home.status);
 
     /* 9. Times, set in the console, in 12-hour form */
     await host.put('/api/host/settings', { event: { date: '2026-12-26', nikah: '10:00', reception: '12:30', lunch: '13:00', venue: 'Sample Hall', maps: 'https://maps.app.goo.gl/9h6yuat4DQtRhneK7' } });

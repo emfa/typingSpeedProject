@@ -3,15 +3,13 @@
   var Q = window.Qubool;
   var $ = function (id) { return document.getElementById(id); };
 
-  /* A link from the claude.ai version (#code, #k, #j) becomes the path form. */
-  (function () {
-    var h = (location.hash || '').replace(/^#/, '');
-    if (/^[kj](-[a-z0-9-]+)?$/.test(h)) location.replace('/' + h.replace(/-\d{1,2}$/, ''));
-  })();
+  // Open links are gone: forget any open-link reply an earlier version remembered on this device.
+  try { localStorage.removeItem('qubool:open'); } catch (e) {}
 
   /* ---------- what the server baked into the page ---------- */
-  // mode 'guest': { code, name, from, note, line, rsvp }; mode 'open': { preset: 'k' | 'j' | null, notFound }.
-  var D = window.__DATA__ || { mode: 'open', preset: null, event: { date: '2026-12-26', maps: 'https://maps.app.goo.gl/9h6yuat4DQtRhneK7' }, repliesOpen: true, maxSeats: 4, host: location.host };
+  // { code, name, from, note, line, rsvp, event, repliesOpen, maxSeats, host }: this page only ever opens on a guest's own link.
+  var D = window.__DATA__;
+  if (!D || !D.code) return;
   var EVENT = D.event || {}, MAX_SEATS = D.maxSeats || 4, HOST = D.host || location.host;
   var SENDERS = Q.senders;
 
@@ -69,54 +67,37 @@
     $('cal').hidden = !EVENT.date;
     if (EVENT.date) {
       $('cal-google').href = googleCalendar();
-      $('cal-ics').href = D.mode === 'guest' ? '/' + D.code + '/invite.ics' : '/invite.ics';
+      $('cal-ics').href = '/' + D.code + '/invite.ics';
     }
     $('maps').hidden = !EVENT.maps; if (EVENT.maps) $('maps').href = EVENT.maps;
   }
 
   /* ---------- the guest ---------- */
-  var guest = null;
-  // from: 'k', 'j', or null when an open link has not yet said who invited them.
-  function makeGuest(name, from, opts) {
-    opts = opts || {};
-    var known = from === 'k' || from === 'j';
-    return {
-      name: name, first: Q.first(name), from: known ? from : null,
-      sender: known ? SENDERS[from] : 'Kaif & Jabeen', other: known ? SENDERS[from === 'k' ? 'j' : 'k'] : 'the caterer',
-      code: opts.code || null, personal: !!opts.code, named: !!opts.code || !!opts.named,
-      sha: Q.sha(name), quip: known ? Q.lineFor(name, from, opts.line) : 'The agenda has one item, and it is served hot.',
-      note: opts.note || '', jaali: Q.jaaliParams(name),
-      user: Q.first(name).toLowerCase().replace(/[^a-z0-9]/g, '') || 'guest'
-    };
-  }
-  var SINGULAR = 'I am getting married. The nikah is a small family gathering in the morning; the reception after it is where I want my people. Come hungry.';
-  var PLURAL = 'We are getting married. The nikah is a small family gathering in the morning; the reception after it is where we want our people. Come hungry.';
+  var guest = {
+    name: D.name, first: Q.first(D.name), from: D.from, sender: SENDERS[D.from], other: SENDERS[D.from === 'k' ? 'j' : 'k'],
+    code: D.code, sha: Q.sha(D.name), quip: Q.lineFor(D.name, D.from, D.line), note: D.note || '', jaali: Q.jaaliParams(D.name),
+    user: Q.first(D.name).toLowerCase().replace(/[^a-z0-9]/g, '') || 'guest'
+  };
+  var INVITE = 'I am getting married. The nikah is a small family gathering in the morning; the reception after it is where I want my people. Come hungry.';
 
   function applyGuest() {
     var g = guest;
     $('arch').innerHTML = Q.jaaliSVG(g.name, { width: 380, height: 200, cell: 60 });
     $('hash').textContent = g.sha;
-    $('greet').textContent = g.named ? 'Assalamu alaikum, ' + g.first + '.' : 'Assalamu alaikum.';
-    $('invite-text').textContent = g.from ? SINGULAR : PLURAL;
+    $('greet').textContent = 'Assalamu alaikum, ' + g.first + '.';
+    $('invite-text').textContent = INVITE;
     $('note').hidden = !g.note;
     $('note').textContent = g.note ? '“' + g.note + '”' : '';
     $('sign').textContent = '— ' + g.sender;
     $('ps').textContent = 'P.S. ' + g.quip;
-    $('ask').textContent = g.named ? 'Will you be there, ' + g.first + '?' : 'Will you be there?';
-    $('who-field').hidden = g.personal;
-    $('from-field').hidden = g.personal || presetFrom !== null;
-    $('from-k').checked = g.from === 'k'; $('from-j').checked = g.from === 'j';
-    if (!g.personal && g.named && !$('who').value) $('who').value = g.name;
+    $('ask').textContent = 'Will you be there, ' + g.first + '?';
     $('host').textContent = g.user + '@' + HOST;
-    $('foot').textContent = g.named
-      ? 'Invite ' + g.sha + '. The lattice on your card is drawn from your name: tiling ' + g.jaali.label + ', contact angle ' + g.jaali.theta.toFixed(1) + '°. Nobody else has this one.'
-      : 'Tell the terminal your name and the lattice on the card redraws for you.';
+    $('foot').textContent = 'Invite ' + g.sha + '. The lattice on your card is drawn from your name: tiling ' + g.jaali.label + ', contact angle ' + g.jaali.theta.toFixed(1) + '°. Nobody else has this one.';
     render();
   }
 
   /* ---------- terminal ---------- */
-  var out = $('out'), shell = $('shell'), cmd = $('cmd'), run = null, mode = 'boot';
-  var presetFrom = D.mode === 'open' && (D.preset === 'k' || D.preset === 'j') ? D.preset : null;
+  var out = $('out'), shell = $('shell'), cmd = $('cmd'), run = null;
   function print(text, cls) {
     var r = document.createElement('span');
     r.className = 'q-term-line' + (cls ? ' ' + cls : '');
@@ -131,11 +112,6 @@
     out.appendChild(r);
   }
   function linesFor(g) {
-    if (!g.named) return [
-      { typed: true, text: 'ssh guest@' + HOST },
-      { text: D.notFound ? 'no invite at this address. Check the link you were sent.' : 'no personal invite on this link.', cls: 'q-out' },
-      { text: 'Assalamu alaikum. Who is this?', cls: 'q-say', pause: 0 }
-    ];
     var l = [
       { typed: true, text: 'ssh ' + g.user + '@' + HOST },
       { text: 'verifying invite ' + g.sha + ' … ok', cls: 'q-out' },
@@ -152,29 +128,12 @@
     var c = out.querySelector('.q-caret'); if (c) c.remove();
     $('skip').hidden = true;
     shell.hidden = false;
-    setMode(!guest.named ? 'name' : guest.from ? 'shell' : 'from');
     out.scrollTop = out.scrollHeight;
-    if (guest.named) { var card = $('card'); card.classList.remove('draw'); void card.offsetWidth; card.classList.add('draw'); setTimeout(function () { card.classList.remove('draw'); }, 2400); }
-  }
-  function setMode(m) {
-    mode = m;
-    $('prompt').textContent = m === 'name' ? 'name:' : m === 'from' ? 'invited by:' : '$';
-    cmd.placeholder = m === 'name' ? 'your name' : m === 'from' ? 'kaif or jabeen' : 'type help';
-    cmd.setAttribute('aria-label', m === 'name' ? 'Your name' : m === 'from' ? 'Who invited you: Kaif or Jabeen' : 'Terminal command');
-  }
-  function senderFrom(text) {
-    var t = String(text || '').trim().toLowerCase();
-    return t === 'k' || t === 'kaif' ? 'k' : t === 'j' || t === 'jabeen' ? 'j' : null;
-  }
-  // An open-link guest has told us who invited them (terminal or form).
-  function chooseSender(from, viaTerminal) {
-    guest = makeGuest(guest.name, from, { named: guest.name !== 'Friend' });
-    applyGuest();
-    if (guest.named && (viaTerminal || mode === 'from')) boot(false);
+    var card = $('card'); card.classList.remove('draw'); void card.offsetWidth; card.classList.add('draw'); setTimeout(function () { card.classList.remove('draw'); }, 2400);
   }
   function boot(instant) {
     if (run) run.stop();
-    mode = 'boot'; shell.hidden = true; $('skip').hidden = !!instant;
+    shell.hidden = true; $('skip').hidden = !!instant;
     run = Q.type(out, linesFor(guest), { instant: !!instant, onDone: booted });
   }
   $('skip').addEventListener('click', function () { boot(true); });
@@ -205,7 +164,7 @@
     cat: function (a) {
       var f = a[0];
       if (!f) return print('cat: which file? Try ls.', 'q-out');
-      if (f === 'invite.txt') { print('Assalamu alaikum, ' + guest.first + '. ' + (guest.from ? 'I am' : 'We are') + ' getting married.'); print('Nikah in the morning with family; reception and lunch after, with you.'); print('— ' + guest.sender, 'q-say'); }
+      if (f === 'invite.txt') { print('Assalamu alaikum, ' + guest.first + '. I am getting married.'); print('Nikah in the morning with family; reception and lunch after, with you.'); print('— ' + guest.sender, 'q-say'); }
       else if (f === 'note.txt') print(guest.note || guest.quip);
       else if (f === 'schedule.txt') {
         var at = function (t, none) { return ((t ? prettyTime(t) : none) + '        ').slice(0, 8); };
@@ -250,7 +209,7 @@
       if (!ready()) { print('rsvp: ' + ($('send-hint').textContent || 'the reply is not complete yet.'), 'q-out'); return; }
       print('rsvp: sending…', 'q-out');
       send('terminal').then(function (r) {
-        print('[main ' + Q.sha(r.updatedAt + (guest.code || guest.name)) + '] rsvp: ' + describeReply(r), 'q-ok');
+        print('[main ' + Q.sha(r.updatedAt + guest.code) + '] rsvp: ' + describeReply(r), 'q-ok');
         print(r.coming === 'yes' ? thanksLine() : 'You will be missed. Thank you for telling me.', 'q-say');
       }, function (err) { print('rsvp: ' + errorText(err), 'q-out'); });
     },
@@ -262,7 +221,6 @@
       print('commit ' + Q.sha('init'));                            print('    init: two families, one main branch', 'q-out');
     },
     curl: function () {
-      if (!guest.personal) return print('curl: works on a personal invite link.', 'q-out');
       print('curl ' + location.origin + '/' + guest.code + '    your invite, as text', 'q-out');
       print('curl -d coming=yes -d seats=2 -d veg=1 ' + location.origin + '/' + guest.code + '/rsvp', 'q-out');
     },
@@ -275,23 +233,6 @@
     e.preventDefault();
     var raw = cmd.value.trim(); cmd.value = '';
     if (!raw) return;
-    if (mode === 'name') {
-      var name = raw.replace(/\s+/g, ' ').slice(0, 60);
-      guest = makeGuest(name, presetFrom || guest.from, { named: true });
-      applyGuest();
-      if (guest.from) { boot(false); return; }
-      echo(raw, 'name:');
-      print('Assalamu alaikum, ' + guest.first + '. Who invited you, Kaif or Jabeen?', 'q-say');
-      setMode('from');
-      return;
-    }
-    if (mode === 'from') {
-      echo(raw, 'invited by:');
-      var from = senderFrom(raw);
-      if (!from) { print('Type kaif or jabeen.', 'q-out'); return; }
-      chooseSender(from, true);
-      return;
-    }
     echo(raw);
     var parts = raw.split(/\s+/), fn = COMMANDS[parts[0].toLowerCase()];
     if (fn) fn(parts.slice(1)); else print('command not found: ' + parts[0] + '. Try help.', 'q-out');
@@ -305,11 +246,6 @@
   $('meal').innerHTML =
     '<label><input type="radio" name="meal" id="meal-veg" value="veg"><span><span class="q-meal q-meal-veg">' + Q.mealMark('veg') + 'Veg</span></span></label>' +
     '<label><input type="radio" name="meal" id="meal-nonveg" value="nonveg"><span><span class="q-meal q-meal-nonveg">' + Q.mealMark('nonveg') + 'Non-veg</span></span></label>';
-
-  // An open-link guest's reply id, kept on their device so they can change their answer later.
-  var OPEN_KEY = 'qubool:open';
-  function openRecord() { try { return JSON.parse(localStorage.getItem(OPEN_KEY) || 'null'); } catch (e) { return null; } }
-  function keepOpenRecord(rec) { try { localStorage.setItem(OPEN_KEY, JSON.stringify(rec)); } catch (e) {} }
 
   function fromSaved(r) {
     saved = r;
@@ -326,9 +262,7 @@
     if (s.seats === 1) return { veg: s.meal === 'veg' ? 1 : 0, nonveg: s.meal === 'nonveg' ? 1 : 0 };
     return { veg: s.veg, nonveg: s.seats - s.veg };
   }
-  function who() { return guest.personal ? guest.name : $('who').value.trim().replace(/\s+/g, ' '); }
   function ready() {
-    if (!who() || !guest.from) return false;
     return s.coming === 'no' || (s.coming === 'yes' && (s.seats > 1 || !!s.meal));
   }
   function command() {
@@ -339,26 +273,20 @@
   }
   function body(via) {
     var p = plates(), yes = s.coming === 'yes';
-    var b = { coming: s.coming, seats: yes ? s.seats : 0, veg: yes ? p.veg : 0, message: $('msg').value.trim(), via: via };
-    if (!guest.personal) { b.name = who(); b.from = guest.from; }
-    return b;
+    return { coming: s.coming, seats: yes ? s.seats : 0, veg: yes ? p.veg : 0, message: $('msg').value.trim(), via: via };
   }
   function replyText() {
     var b = body('web'), p = plates();
     return 'RSVP: Kaif & Jabeen reception' + (EVENT.date ? ', ' + prettyDate() : '') + '\n' +
-      'Name: ' + who() + '\n' +
+      'Name: ' + guest.name + '\n' +
       (b.coming === 'yes' ? 'Coming: yes, ' + b.seats + (b.seats === 1 ? ' seat' : ' seats') + ' (' + p.veg + ' veg, ' + p.nonveg + ' non-veg)' : 'Coming: no, with regrets') + '\n' +
       (b.message ? 'Note: ' + b.message + '\n' : '') + 'Invite: ' + guest.sha;
   }
 
   // Saves the reply. Resolves with the reply as stored, or rejects with { status, error }.
   function send(via) {
-    var url, method = 'PUT', rec = openRecord();
-    if (guest.personal) url = '/api/rsvp/' + guest.code;
-    else if (rec && rec.id) url = '/api/rsvp/' + rec.id;
-    else { url = '/api/rsvp/open'; method = 'POST'; }
     sending = true; failed = null; render();
-    return fetch(url, { method: method, headers: { 'content-type': 'application/json' }, body: JSON.stringify(body(via)) })
+    return fetch('/api/rsvp/' + guest.code, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body(via)) })
       .then(function (res) {
         return res.json().catch(function () { return {}; }).then(function (data) {
           if (!res.ok) throw { status: res.status, error: data.error || 'server_error' };
@@ -366,14 +294,10 @@
         });
       }, function () { throw { status: 0, error: 'offline' }; })
       .then(function (data) {
-        if (data.id) keepOpenRecord({ id: data.id, name: who(), from: guest.from });
-        else if (rec && rec.id && !guest.personal) keepOpenRecord({ id: rec.id, name: who(), from: guest.from });
         sending = false; fromSaved(data.rsvp); showDone(via === 'terminal');
         return data.rsvp;
       })
       .catch(function (err) {
-        // The open reply was removed by the hosts: start a fresh one next time.
-        if (err.status === 404 && rec && !guest.personal) { try { localStorage.removeItem(OPEN_KEY); } catch (e) {} }
         sending = false; failed = err; render();
         throw err;
       });
@@ -382,8 +306,7 @@
     var e = err && err.error;
     return e === 'closed' ? 'Replies are closed now. Message ' + guest.sender + ' directly.'
       : e === 'offline' ? 'Could not reach the invite. Check your connection and send again.'
-      : e === 'slow_down' ? 'Too many replies from this network just now. Try again in a little while.'
-      : e === 'not_found' ? 'That reply could not be found. Send it again to save a fresh one.'
+      : e === 'not_found' ? 'This invite is no longer on the list. Message ' + guest.sender + ' directly.'
       : 'That did not save. Send it again, or copy your reply and message ' + guest.sender + '.';
   }
 
@@ -406,7 +329,7 @@
     $('copy').hidden = !failed;
     $('send-hint').textContent = !D.repliesOpen ? 'Replies are closed now. Message ' + guest.sender + ' directly.'
       : failed ? errorText(failed)
-      : !ok ? (!who() ? 'Add your name first.' : !guest.from ? 'Say who invited you first.' : '')
+      : !ok ? ''
       : 'Saved straight to ' + guest.sender + '’s guest list. You can change it later from this link.';
   }
   function thanksLine() { return EVENT.date ? 'See you on the ' + ordinal(dateParts().d) + ', insha’Allah.' : 'See you there, insha’Allah.'; }
@@ -424,12 +347,11 @@
   function showForm() { $('done').hidden = true; $('form').hidden = false; syncInputs(); render(); }
 
   $('form').addEventListener('change', function (e) {
-    if (e.target.name === 'from') { chooseSender(e.target.value, false); return; }
     if (e.target.name === 'coming') s.coming = e.target.value;
     if (e.target.name === 'meal') s.meal = e.target.value;
     failed = null; render();
   });
-  $('form').addEventListener('input', function (e) { if (e.target.id === 'who' || e.target.id === 'msg') { failed = null; render(); } });
+  $('form').addEventListener('input', function (e) { if (e.target.id === 'msg') { failed = null; render(); } });
   $('form').addEventListener('click', function (e) {
     var b = e.target.closest('[data-step]'); if (!b) return;
     s[b.dataset.step] += +b.dataset.by;
@@ -455,24 +377,7 @@
 
   /* ---------- start ---------- */
   function start() {
-    if (D.mode === 'guest') {
-      guest = makeGuest(D.name, D.from, { code: D.code, line: D.line, note: D.note });
-      fromSaved(D.rsvp);
-    } else {
-      // Someone who replied from an open link before is recognised on this device.
-      var rec = openRecord();
-      if (rec && rec.id && rec.name && (rec.from === 'k' || rec.from === 'j') && (!presetFrom || presetFrom === rec.from)) {
-        guest = makeGuest(rec.name, rec.from, { named: true });
-        $('who').value = rec.name;
-        fetch('/api/rsvp/' + rec.id).then(function (r) { return r.ok ? r.json() : null; }).then(function (data) {
-          if (data && data.rsvp) { fromSaved(data.rsvp); syncInputs(); render(); showDone(true); }
-          else { try { localStorage.removeItem(OPEN_KEY); } catch (e) {} }
-        }, function () {});
-      } else {
-        guest = makeGuest('Friend', presetFrom, {});
-        guest.named = false;
-      }
-    }
+    fromSaved(D.rsvp);
     syncInputs();
     applyGuest();
     if (saved) showDone(true);

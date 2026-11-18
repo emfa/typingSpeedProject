@@ -1,4 +1,4 @@
-// Builds dist/invite.html and dist/host.html from the Qubool design system and the page sources in src/.
+// Builds dist/invite.html, dist/host.html and dist/missing.html from the Qubool design system and the page sources in src/.
 // The Worker imports both files as text and fills in two placeholders per request:
 //   <!--HEAD-->        page title and link-preview tags for this guest
 //   /*DATA*/null       the guest, their reply and the event, as JSON
@@ -69,3 +69,4 @@ ${scripts.map((s) => `<script>\n${s}\n</script>`).join('\n')}
 
 page('invite');
 page('host');
+page('missing');   // "Invite not found", for any address that is not a guest's link

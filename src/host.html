@@ -65,18 +65,6 @@
       <p class="q-hint" id="state">Loading…</p>
     </section>
 
-    <!-- Replies from open links -->
-    <section class="list" id="open-section" hidden>
-      <h2>From open links</h2>
-      <p class="q-hint">People who replied from an open link rather than their own. Remove anything that is not a real guest.</p>
-      <div class="q-table-wrap">
-        <table class="q-table">
-          <thead><tr><th>Name</th><th>Says</th><th>Reply</th><th class="q-num">Seats</th><th>Plates</th><th>Their line</th><th>Replied</th><th><span class="sr">Remove</span></th></tr></thead>
-          <tbody id="open-rows"></tbody>
-        </table>
-      </div>
-    </section>
-
     <!-- The day -->
     <form class="panel event" id="event" novalidate>
       <h2 class="wide">The day</h2>
@@ -91,17 +79,6 @@
       <p class="q-hint wide" id="ev-hint" aria-live="polite">Changes show on every invite straight away. Empty times show as &ldquo;TBA&rdquo; (the nikah as &ldquo;Morning&rdquo;).</p>
     </form>
 
-    <!-- Open links -->
-    <section class="panel">
-      <div class="open-links wide">
-        <p class="q-label">Open links, for someone not on the list</p>
-        <p class="q-hint">The page asks their name. Each link signs the card as the person who sends it. Replies land under &ldquo;From open links&rdquo;.</p>
-        <div class="acts">
-          <button class="q-btn q-btn-small" type="button" data-open="k">Copy Kaif&rsquo;s open link</button>
-          <button class="q-btn q-btn-small" type="button" data-open="j">Copy Jabeen&rsquo;s open link</button>
-        </div>
-      </div>
-      <p class="q-hint wide" id="preview-hint"></p>
-    </section>
+    <p class="q-hint" id="preview-hint"></p>
   </div>
 </main>

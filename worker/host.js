@@ -3,7 +3,7 @@ import hostHtml from '../dist/host.html';
 import { Q, SENDERS } from './qubool.js';
 import { json, html, fail, now, randomId, b64url, b64urlDecode, sha256, sha256hex, hmac, sameBytes, readJson, cleanLine, throttled, ipBucket } from './util.js';
 import { CODE, DEFAULT_EVENT, getEvent } from './guest.js';
-import { publicReply, OPEN_ID } from './rsvp.js';
+import { publicReply } from './rsvp.js';
 
 const COOKIE = '__Host-qubool';
 const SESSION_DAYS = 30;
@@ -75,7 +75,7 @@ const guestRow = (g, reply) => ({
 async function state(env, user, url) {
   const [guests, replies, event, open] = await Promise.all([
     env.DB.prepare('SELECT g.*, p.updated_at AS preview_at FROM guests g LEFT JOIN previews p ON p.code = g.code ORDER BY g.position').all(),
-    env.DB.prepare('SELECT * FROM rsvps').all(),
+    env.DB.prepare('SELECT * FROM rsvps WHERE guest_code IS NOT NULL').all(),
     getEvent(env),
     env.DB.prepare("SELECT value FROM settings WHERE key = 'replies_open'").first(),
   ]);
@@ -83,8 +83,6 @@ async function state(env, user, url) {
   return {
     user, origin: url.origin, event, repliesOpen: open ? JSON.parse(open.value) !== false : true,
     guests: guests.results.map((g) => guestRow(g, byId.get(g.code))),
-    open: replies.results.filter((r) => !r.guest_code).map((r) => ({ id: r.id, ...publicReply(r), createdAt: r.created_at }))
-      .sort((a, b) => (a.updatedAt < b.updatedAt ? 1 : -1)),
   };
 }
 
@@ -178,13 +176,7 @@ async function putSettings(env, body) {
   return json({ ok: true });
 }
 
-async function removeOpenReply(env, id) {
-  if (!OPEN_ID.test(id)) return fail(404, 'not_found');
-  const res = await env.DB.prepare('DELETE FROM rsvps WHERE id = ? AND guest_code IS NULL').bind(id).run();
-  return res.meta.changes ? json({ ok: true }) : fail(404, 'not_found');
-}
-
-// One row per guest, then one per open-link reply. Cells starting with = + - @ are quoted
+// One row per guest. Cells starting with = + - @ are quoted
 // with a leading apostrophe so a spreadsheet never runs them as formulas.
 async function exportCsv(env, url) {
   const s = await state(env, null, url);
@@ -196,7 +188,6 @@ async function exportCsv(env, url) {
   const head = ['name', 'invited_by', 'answer', 'seats', 'veg', 'nonveg', 'message', 'replied_at', 'link', 'sent_at', 'opened', 'note'];
   const rows = s.guests.map((g) => [g.name, SENDERS[g.from], g.rsvp ? g.rsvp.coming : 'no reply', g.rsvp?.seats ?? '', g.rsvp?.veg ?? '', g.rsvp?.nonveg ?? '',
     g.rsvp?.message ?? '', g.rsvp?.updatedAt ?? '', `${url.origin}/${g.code}`, g.sentAt ?? '', g.opens, g.note]);
-  s.open.forEach((r) => rows.push([r.name, SENDERS[r.from], r.coming, r.seats, r.veg, r.nonveg, r.message, r.updatedAt, 'open link', '', '', '']));
   const body = '﻿' + [head, ...rows].map((r) => r.map(cell).join(',')).join('\r\n') + '\r\n';
   return new Response(body, { headers: { 'content-type': 'text/csv; charset=utf-8', 'content-disposition': `attachment; filename="reception-replies-${now().slice(0, 10)}.csv"`, 'cache-control': 'no-store' } });
 }
@@ -222,7 +213,7 @@ export async function hostRoute(env, request, url) {
     const body = await readJson(request);
     return body.error ? fail(400, body.error) : putSettings(env, body.value);
   }
-  let m = /^\/api\/host\/guests\/([a-z0-9-]+)(\/preview)?$/.exec(path);
+  const m = /^\/api\/host\/guests\/([a-z0-9-]+)(\/preview)?$/.exec(path);
   if (m && CODE.test(m[1])) {
     if (m[2] && method === 'PUT') return putPreview(env, m[1], request);
     if (!m[2] && method === 'PATCH') {
@@ -231,7 +222,5 @@ export async function hostRoute(env, request, url) {
     }
     if (!m[2] && method === 'DELETE') return removeGuest(env, m[1]);
   }
-  m = /^\/api\/host\/replies\/([a-z0-9-]+)$/.exec(path);
-  if (m && method === 'DELETE') return removeOpenReply(env, m[1]);
   return fail(404, 'not_found');
 }
