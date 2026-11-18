@@ -38,6 +38,8 @@ export async function run(base) {
   t.ok(r.headers.get('referrer-policy') === 'no-referrer' && /frame-ancestors 'none'/.test(r.headers.get('content-security-policy') || ''), 'no-referrer and a CSP on the page');
   t.ok(r.headers.get('x-robots-tag') === 'noindex, nofollow', 'pages ask not to be indexed');
   t.ok(!r.data.includes('Ayesha'), 'the page holds no other guest');
+  r = await fetch(base + '/' + priya.code, { method: 'HEAD' });
+  t.ok(r.status === 200 && r.headers.get('content-type').startsWith('text/html'), 'HEAD gets the page headers too (some preview robots use it)', r.status);
   r = await anon.get('/' + priya.code.slice(0, -6) + 'zzzzzz');
   t.ok(r.status === 404, 'a code not on the list is a 404', r.status);
 

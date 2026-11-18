@@ -32,7 +32,8 @@ function secure(res) {
 const PRESETS = { '/k': 'k', '/kaif': 'k', '/j': 'j', '/jabeen': 'j' };
 
 async function route(request, env, ctx) {
-  const url = new URL(request.url), path = url.pathname, method = request.method;
+  // HEAD is answered as GET (the runtime drops the body); some link-preview robots only send HEAD.
+  const url = new URL(request.url), path = url.pathname, method = request.method === 'HEAD' ? 'GET' : request.method;
 
   // www and any other host name go to the one canonical address, so links look the same everywhere.
   if (env.CANONICAL_HOST && url.hostname === 'www.' + env.CANONICAL_HOST) {
