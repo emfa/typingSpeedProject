@@ -86,7 +86,8 @@ export async function readJson(request, maxBytes = 16384) {
   if (!type.includes('application/json')) return { error: 'expected_json' };
   const body = await request.text();
   if (body.length > maxBytes) return { error: 'too_large' };
-  try { return { value: JSON.parse(body) }; } catch { return { error: 'bad_json' }; }
+  // Every endpoint reads fields off an object: null, a number or a list is refused here, not by a crash later.
+  try { const v = JSON.parse(body); return v && typeof v === 'object' && !Array.isArray(v) ? { value: v } : { error: 'bad_json' }; } catch { return { error: 'bad_json' }; }
 }
 
 // Characters as people count them, so a 140-character limit allows 140 emoji-free letters in any script.

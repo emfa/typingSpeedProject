@@ -1,8 +1,10 @@
 <main class="host">
   <header class="head">
-    <p class="q-label">Kaif &amp; Jabeen · reception · for the hosts only</p>
-    <h1>Guests</h1>
-    <p class="q-hint" id="who-am-i" hidden></p>
+    <div class="head-top">
+      <h1>Guests</h1>
+      <button class="q-btn q-btn-small" id="logout" type="button" hidden>Sign out</button>
+    </div>
+    <p class="q-hint" id="who-am-i" aria-live="polite" hidden></p>
   </header>
 
   <!-- Sign in -->
@@ -12,17 +14,16 @@
       <input class="q-input" id="pass" type="password" autocomplete="current-password" required>
     </div>
     <button class="q-btn q-btn-primary" type="submit" id="login-btn">Sign in</button>
-    <p class="q-hint wide" id="login-hint" aria-live="polite">Each host has their own passphrase. You are signed out after 5 minutes without activity, and when the browser closes.</p>
+    <p class="q-hint wide" id="login-hint" aria-live="polite">For the hosts only. Each host has their own passphrase. You are signed out after 5 minutes without activity, and when the browser closes.</p>
   </form>
 
   <div class="app" id="app" hidden>
     <!-- Totals for the caterer -->
     <section class="list">
       <div class="list-head">
-        <h2>Who is coming</h2>
+        <h2 class="q-title">Who is coming</h2>
         <div class="acts">
           <a class="q-btn q-btn-small" id="csv" href="/api/host/export.csv" download>Export CSV</a>
-          <button class="q-btn q-btn-small" id="logout" type="button">Sign out</button>
         </div>
       </div>
       <div class="q-stats" id="stats" aria-live="polite"></div>
@@ -62,17 +63,17 @@
           <tbody id="rows"></tbody>
         </table>
       </div>
-      <p class="q-hint" id="state">Loading…</p>
+      <p class="q-hint" id="state" aria-live="polite">Loading…</p>
     </section>
 
     <!-- The day -->
     <form class="panel event" id="event" novalidate>
-      <h2 class="wide">The day</h2>
+      <h2 class="q-title wide">The day</h2>
       <div class="q-field"><label class="q-label" for="ev-date">Date</label><input class="q-input" id="ev-date" type="date" required></div>
       <div class="q-field"><label class="q-label" for="ev-nikah">Nikah</label><input class="q-input" id="ev-nikah" type="time"></div>
       <div class="q-field"><label class="q-label" for="ev-reception">Reception</label><input class="q-input" id="ev-reception" type="time"></div>
       <div class="q-field"><label class="q-label" for="ev-lunch">Lunch</label><input class="q-input" id="ev-lunch" type="time"></div>
-      <div class="q-field grow"><label class="q-label" for="ev-venue">Venue name</label><input class="q-input" id="ev-venue" maxlength="120" placeholder="Leave empty to show &ldquo;See it on the map&rdquo;"></div>
+      <div class="q-field grow"><label class="q-label" for="ev-venue">Venue name</label><input class="q-input" id="ev-venue" maxlength="120" placeholder="Shown on every card, linked to the map"></div>
       <div class="q-field grow"><label class="q-label" for="ev-maps">Map link</label><input class="q-input" id="ev-maps" type="url" spellcheck="false" placeholder="https://maps.app.goo.gl/…"></div>
       <label class="sent wide"><input type="checkbox" id="ev-open"><span>Replies are open</span></label>
       <button class="q-btn" id="ev-save" type="submit">Save the day</button>

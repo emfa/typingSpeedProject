@@ -7,19 +7,20 @@
       <label class="q-p" for="cmd" id="prompt">$</label>
       <input id="cmd" name="cmd" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="type help" enterkeyhint="go">
     </form>
+    <p class="sr" id="said" aria-live="polite"></p>
   </section>
 
   <article class="q-card" id="card">
     <div class="q-card-arch" id="arch"></div>
     <div class="q-card-body">
       <p class="q-bismillah" lang="ar" dir="rtl">بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ</p>
-      <p class="q-label">Reception · invite <b id="hash">0000000</b></p>
       <h1 class="q-names">Kaif <i>&amp;</i> Jabeen</h1>
-      <p class="q-prose"><span id="greet">Assalamu alaikum.</span> <span id="invite-text">We are getting married. The nikah is a small family gathering in the morning; the reception after it is where we want our people. Come hungry.</span></p>
+      <p class="q-prose"><span id="greet">Hey there,</span> <span id="invite-text">Before we officially close out 2026, I’m spinning up one last P1 bridge call—I’m getting married! Don’t worry, there’s no outage to fix, no logs to dig through, and zero RCAs to write. Just mute your notifications, come hungry, and help us end the year on a high note.</span></p>
       <p class="q-note" id="note" hidden></p>
       <dl class="q-facts">
         <div><dt>When</dt><dd id="when">To be announced</dd></div>
         <div><dt>Where</dt><dd id="where">To be announced</dd></div>
+        <div><dt>Invite</dt><dd><b id="hash">0000000</b></dd></div>
       </dl>
       <p class="q-sign" id="sign">— Kaif</p>
       <p class="q-hint" id="ps"></p>
@@ -41,7 +42,7 @@
       </li>
       <li>
         <time id="t-lunch">TBA</time>
-        <div><h3>Lunch</h3><p>Veg and non-veg, as you choose below.</p></div>
+        <div><h3>Lunch</h3><p>The real reason you’re RSVPing. Veg and non-veg spreads—pick your preference below.</p></div>
         <span class="q-tag q-tag-on">You are invited</span>
       </li>
     </ol>
@@ -61,7 +62,7 @@
     <h2 class="q-title" id="h-rsvp">Your reply</h2>
     <form class="q-rsvp" id="form" novalidate>
       <fieldset class="q-field">
-        <legend class="q-label" id="ask">Will you be there?</legend>
+        <legend class="q-ask" id="ask">Will you be there?</legend>
         <div class="q-seg">
           <label><input type="radio" name="coming" id="coming-yes" value="yes"><span>Qubool hai, I&rsquo;m in</span></label>
           <label><input type="radio" name="coming" id="coming-no" value="no"><span>Can&rsquo;t make it</span></label>
@@ -94,7 +95,7 @@
       </div>
       <div class="q-field">
         <label class="q-label" for="msg">A line for me (optional)</label>
-        <input class="q-input" id="msg" maxlength="140" placeholder="A dua, a roast, or an allergy" autocomplete="off">
+        <input class="q-input" id="msg" maxlength="140" placeholder="A dua, a roast, or a food allergy" autocomplete="off">
       </div>
       <p class="q-echo" id="echo" aria-live="polite"></p>
       <div class="send">

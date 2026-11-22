@@ -30,8 +30,7 @@ The owner is the groom's sibling. They and Kaif are the two hosts.
 2. **Times and venue name** are not set yet. The hosts enter them in the console (The day). The invite shows "TBA" and "See it on the map" until then.
 3. **Personal notes** for guests: none yet. Entered in the console per guest.
 4. **Jabeen's guest list** has not arrived.
-5. **Design-system docs are stale on one point:** `design-system/project/` still describes `#k` / `#j` open links. If you update them, republish the "Qubool" design-system artifact too (link in `CLAUDE.md`).
-6. **Optional tidy-ups:**
+5. **Optional tidy-ups:**
    - Merge this branch into `main`, then set the production branch back to `main` in Cloudflare (Worker, Settings, Build). `main` still holds the old Angular app.
    - Make the GitHub repo private. Nothing secret is in it, but guests' colleagues are engineers.
    - Delete the retired claude.ai invite and host-console artifacts (ids in `CLAUDE.md`) once the owner agrees.

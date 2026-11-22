@@ -13,29 +13,26 @@ The host writes one record per guest before sending anything.
 | `line` | 3 | which of the sender's one-liners closes the card. Assigned once, when the guest is added, by `Qubool.nextLine` so lines spread evenly |
 | `note` | You reviewed my worst pull requests without judgment. | optional; a personal line in the host's own words. The card leaves the space out when there is none |
 
-`Qubool.guest(record)` returns everything derived from it: `first`, `sender`, `sha`, `slug`, `quip`, and the lattice settings.
+`Qubool.guest(record)` returns everything derived from it: `first`, `sender`, `sha`, `quip`, and the lattice settings. Its `slug` is the guest's code, passed through from the record: the Worker mints codes, the design system never does.
 
 ## What each guest sees that nobody else does
 
 - **Their name** in the terminal login and the card's greeting.
 - **Their lattice** in the arch of the card, drawn from their name.
-- **Their invite hash**, seven characters, on the card's label.
+- **Their invite hash**, seven characters, on the card under When and Where.
 - **Their note**, when the host has written one. This is the part people remember; even one sentence is worth it.
 - **Their P.S.**, one line from the sender's set: 16 engineering lines for Kaif's guests (`Qubool.lines.k`), 10 plain warm ones for Jabeen's (`Qubool.lines.j`). The host console hands out the least-used line, so with 38 guests each of Kaif's lines goes to two or three people. A link without a line number falls back to a pick from the name's hash, which clumps. Add lines at the end of a list, never in the middle: a guest's line number points into it.
 - **The signature**: Kaif's or Jabeen's.
 
 ## The link
 
-The invite page's address, then `#`, then the guest's code and line number: `k-naresh-0d90-3`. The code has three parts, and the line number follows it.
+The site's address, then the guest's code: `kaifwedsjabeen.in/k-naresh-x7q2pa`. The code is made when the host adds the guest, and it never changes once the link is sent. It has three parts:
 
 - `k` or `j`: who invited them, Kaif or Jabeen. It sets the voice, the sign-off and which set of one-liners is used.
-- the name in lower case with hyphens. The page turns it back into the greeting, so `ashok-yogi` is greeted as Ashok Yogi.
-- four characters that sign the first two parts. A code with the wrong signature is treated as no code at all.
-- `-<n>`, optional: the guest's one-liner. It is not signed; it only picks a joke.
+- the name in lower case with hyphens.
+- six random characters, so nobody can guess a link from a name.
 
-The page holds no guest list. Any correctly signed code opens a personal invite, so adding a guest later means minting one more code, not rebuilding the page. `Qubool.mint(name, from)` makes a code, `Qubool.linkFor(code, line)` adds the line, and `Qubool.openCode(text)` reads either form back. If two guests of the same host share a name, add a surname or initial to one so their codes and lattices differ.
-
-A link with no code still works: the terminal asks their name and then who invited them, and the page personalises itself from the answers. The RSVP form asks the same two things for anyone who skips the terminal. `#k` and `#j` are open links that already say who sent them, so only the name is asked.
+The guest list lives with the site, not in the page. Only a code on that list opens an invite or takes a reply; any other address shows "Invite not found". There are no open links: someone not on the list is added by a host and sent their own link. If two guests of the same host share a name, add a surname or initial to one so their greetings and lattices differ.
 
 ## The RSVP record
 
@@ -43,7 +40,7 @@ One per guest, replaced each time they change their answer.
 
 | field | values |
 | --- | --- |
-| `slug` | the guest's code; `open-k` or `open-j` for a reply from an open link |
+| `slug` | the guest's code |
 | `from` | Kaif or Jabeen |
 | `coming` | `yes` or `no` |
 | `seats` | 1 to 4; 0 when not coming |

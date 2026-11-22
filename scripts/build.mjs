@@ -27,6 +27,9 @@ const tokens =
   `:root { ${block('night', 'dark')} ${fixed} }\n` +
   `@media (prefers-color-scheme: light) { :root { ${block('day', 'light')} } }\n`;
 
+// Link previews are drawn on a canvas in the console, always in the night colours.
+const night = Object.fromEntries(T.color.tokens.filter((t) => !String(t.value).startsWith('{')).map((t) => [t.name, typeof t.value === 'string' ? t.value : t.value.night]));
+
 const FONTS =
   '<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n' +
   '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=JetBrains+Mono:wght@400;500&display=swap">';
@@ -35,7 +38,8 @@ const bundleCss = read(DS, 'components', 'bundle.css');
 const bundleJs = read(DS, 'components', 'bundle.js');
 
 function page(name) {
-  const [css, html, js] = ['css', 'html', 'js'].map((ext) => read(ROOT, 'src', `${name}.${ext}`));
+  const [css, html, js0] = ['css', 'html', 'js'].map((ext) => read(ROOT, 'src', `${name}.${ext}`));
+  const js = js0.replace('/*NIGHT*/null', JSON.stringify(night));
   // Amiri sets the Bismillah and nothing else, so ask Google Fonts for just those letters (about 21 KB, not 108 KB).
   const bismillah = /class="q-bismillah"[^>]*>([^<]+)</.exec(html)?.[1];
   const amiri = bismillah ? `\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri&text=${encodeURIComponent(bismillah)}&display=swap">` : '';

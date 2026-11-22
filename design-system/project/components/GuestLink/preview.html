@@ -18,17 +18,18 @@
 (function () {
   var Q = window.Qubool;
   var GUESTS = [
-    { name: 'Priya Nair', from: 'k', line: 0 },
-    { name: 'Rahul Mehta', from: 'k', line: 1 },
-    { name: 'Sneha Iyer', from: 'j', line: 3 }
+    // Sample codes, in the form the Worker mints: sender, name, six random characters.
+    { name: 'Priya Nair', from: 'k', line: 0, slug: 'k-priya-nair-x7q2pa' },
+    { name: 'Rahul Mehta', from: 'k', line: 1, slug: 'k-rahul-mehta-m4kz9t' },
+    { name: 'Sneha Iyer', from: 'j', line: 3, slug: 'j-sneha-iyer-ez7nqw' }
   ];
   document.getElementById('list').innerHTML = GUESTS.map(function (raw) {
-    var g = Q.guest(raw), code = g.slug, cut = code.lastIndexOf('-'), tail = g.line == null ? '' : '-' + g.line;
+    var g = Q.guest(raw), code = g.slug, cut = code.lastIndexOf('-');
     return '<div class="q-link">' +
       '<div class="q-seal q-seal-small">' + Q.jaaliSVG(g.name, { width: 40, height: 40, cell: 26, weight: 1 }) + '</div>' +
       '<span class="q-link-who">' + Q.esc(g.name) + '</span>' +
-      '<span class="q-link-url">\u2026/invite#' + code.slice(0, cut) + '<b>' + code.slice(cut) + '</b>' + tail + '</span>' +
-      '<button class="q-btn q-btn-small" type="button" data-url="#' + Q.linkFor(code, g.line) + '">Copy link</button>' +
+      '<span class="q-link-url"><span>/' + code.slice(0, cut) + '</span><b>' + code.slice(cut) + '</b></span>' +
+      '<button class="q-btn q-btn-small" type="button" data-url="https://kaifwedsjabeen.in/' + code + '">Copy link</button>' +
     '</div>';
   }).join('');
   document.getElementById('list').addEventListener('click', function (e) {

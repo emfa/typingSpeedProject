@@ -104,6 +104,7 @@ async function addGuests(env, user, entries) {
   const added = [], skipped = [], writes = [], at = now();
   for (const e of entries) {
     const name = cleanLine(e?.name, 60), from = e?.from;
+    if (name === null) { skipped.push({ name: [...String(e.name)].slice(0, 40).join('') + '…', reason: 'too_long' }); continue; }
     if (!name || !/[\p{L}\p{N}]/u.test(name)) { skipped.push({ name: String(e?.name ?? ''), reason: 'not_a_name' }); continue; }
     if (from !== 'k' && from !== 'j') { skipped.push({ name, reason: 'no_sender' }); continue; }
     if (taken.has(from + '|' + name.toLowerCase())) { skipped.push({ name, reason: 'duplicate' }); continue; }
@@ -159,7 +160,8 @@ async function putSettings(env, body) {
   const writes = [];
   if (body.event) {
     const e = body.event, out = { ...DEFAULT_EVENT };
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(e.date || '') || isNaN(Date.parse(e.date))) return fail(400, 'bad_date');
+    // A real calendar day: 2026-02-31 parses (as 3 March), so it must also read back unchanged.
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(e.date || '') || isNaN(Date.parse(e.date)) || new Date(e.date).toISOString().slice(0, 10) !== e.date) return fail(400, 'bad_date');
     out.date = e.date;
     for (const k of ['nikah', 'reception', 'lunch']) {
       if (e[k] === null || e[k] === '' || e[k] === undefined) out[k] = null;

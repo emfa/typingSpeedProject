@@ -82,6 +82,11 @@ export async function run(base, { engine = 'chromium' } = {}) {
           const small = [];
           for (const sel of targets) if ((await page.evaluate(tapsAt44, sel)) !== true) small.push(sel);
           t.ok(!small.length, `${at} invite: every control is a 44px tap target`, small);
+          await page.click('#cal summary');
+          const cal = [];
+          for (const sel of ['#cal-google', '#cal-ics']) if ((await page.evaluate(tapsAt44, sel)) !== true) cal.push(sel);
+          t.ok(!cal.length, `${at} invite: the calendar choices are 44px tap targets`, cal);
+          await page.click('#cal summary');
         }
         await page.locator('label:has(#coming-no)').click();
         await shot('invite');
@@ -114,7 +119,7 @@ export async function run(base, { engine = 'chromium' } = {}) {
           const tbl = await page.evaluate(() => {
             const wrap = document.querySelector('.q-table-wrap'), fits = wrap.scrollWidth <= wrap.clientWidth + 1;
             wrap.scrollLeft = wrap.scrollWidth;
-            const name = document.querySelector('tr[data-code] td:first-child').getBoundingClientRect(), box = wrap.getBoundingClientRect();
+            const name = document.querySelector('tr[data-code] > :first-child').getBoundingClientRect(), box = wrap.getBoundingClientRect();
             const pinned = name.left >= box.left - 1 && name.right <= box.right + 1;
             wrap.scrollLeft = 0;
             return { fits, pinned };

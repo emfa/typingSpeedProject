@@ -29,10 +29,18 @@ export async function run(base) {
 
   try {
     /* 1. A personal link, phone, light, with motion */
+    const typing = await b.newContext({ viewport: { width: 390, height: 844 }, reducedMotion: 'no-preference' });
+    const tp = await typing.newPage();
+    await tp.goto(base + '/' + arjun.code);
+    const topWhileTyping = await tp.evaluate(() => document.getElementById('card').getBoundingClientRect().top + scrollY);
+    await tp.waitForSelector('#shell:not([hidden])', { timeout: 20000 });
+    const topAfter = await tp.evaluate(() => document.getElementById('card').getBoundingClientRect().top + scrollY);
+    t.ok(Math.abs(topAfter - topWhileTyping) < 1, 'the card stays put while the terminal types and when its command line appears', [topWhileTyping, topAfter]);
+    await typing.close();
     let { p, ctx } = await open('/' + arjun.code, { phone: true, light: true, motion: true });
     const lineText = await p.evaluate((n) => Qubool.lineFor('Arjun', 'k', n), 9);
-    t.ok((await p.locator('#greet').innerText()) === 'Assalamu alaikum, Arjun.', 'the card greets the guest by name');
-    t.ok((await p.locator('#sign').innerText()) === '— Kaif' && (await p.locator('#invite-text').innerText()).startsWith('I am getting married'), 'signed by Kaif, in the first person');
+    t.ok((await p.locator('#greet').innerText()) === 'Hey Arjun,', 'the card greets the guest by name');
+    t.ok((await p.locator('#sign').innerText()) === '— Kaif' && (await p.locator('#invite-text').innerText()).startsWith('Before we officially close out 2026'), 'signed by Kaif, in the first person');
     t.ok((await p.locator('#ps').innerText()) === 'P.S. ' + lineText, 'their assigned P.S. line (9) is shown', await p.locator('#ps').innerText());
     t.ok((await p.locator('#note').innerText()).includes('worst pull requests'), 'their personal note is on the card');
     t.ok((await p.locator('#hash').textContent()) === (await p.evaluate(() => Qubool.sha('Arjun'))), 'the invite hash comes from their name');
@@ -46,6 +54,8 @@ export async function run(base) {
     const out = await p.locator('#out').innerText();
     t.ok(out.includes('Arjun · invite') && out.includes('nikah       family only') && /days to go|Tomorrow|Today/.test(out), 'whoami, cat and date answer');
     t.ok(out.includes('reported to Jabeen') && out.includes('command not found: nope'), 'sudo and unknown commands answer');
+    const said = (await p.locator('#said').textContent()).trim();
+    t.ok(said === 'command not found: nope. Try help.', 'screen readers hear the last command’s answer, not the boot script', said);
     await term(p, 'rsvp --qubool --seats 1');
     t.ok((await lastLines(p, 1)).includes('which lunch?'), 'one seat with no meal: the terminal asks instead of guessing', await lastLines(p, 1));
     await term(p, 'rsvp --qubool --seats 3');
@@ -53,6 +63,7 @@ export async function run(base) {
     await term(p, 'rsvp --qubool --seats 3 --veg 1');
     await p.waitForFunction(() => /\[main [0-9a-f]{7}\] rsvp: qubool hai, 3 seats \(1 veg, 2 non-veg\)/.test(document.getElementById('out').innerText), null, { timeout: 8000 }).catch(() => {});
     t.ok(/\[main [0-9a-f]{7}\] rsvp: qubool hai, 3 seats \(1 veg, 2 non-veg\)/.test(await p.locator('#out').innerText()), 'a complete rsvp commits and prints a receipt', await lastLines(p, 3));
+    t.ok(/^rsvp: sending… \[main [0-9a-f]{7}\] rsvp: qubool hai/.test(await p.locator('#said').textContent()), 'screen readers hear the receipt that arrives after saving', await p.locator('#said').textContent());
     t.ok(await p.locator('#done').isVisible() && (await p.locator('#thanks').innerText()) === 'See you on the 26th, insha’Allah.', 'the page shows the thank-you');
     await term(p, 'rsvp --status');
     t.ok((await lastLines(p, 2)).includes('saved: qubool hai, 3 seats'), 'rsvp --status reads it back');
@@ -90,7 +101,28 @@ export async function run(base) {
     /* 5. Jabeen's guest, desktop dark */
     ({ p, ctx } = await open('/' + zainab.code));
     t.ok((await p.locator('#sign').innerText()) === '— Jabeen' && (await p.evaluate(() => Qubool.lines.j)).includes((await p.locator('#ps').innerText()).slice(5)), 'Jabeen’s guest gets her voice and her lines');
+    await p.emulateMedia({ forcedColors: 'active' });
+    await p.locator('label:has(#coming-yes)').click();
+    const hc = await p.evaluate(() => ['coming-yes', 'coming-no'].map((id) => getComputedStyle(document.getElementById(id).nextElementSibling).backgroundColor));
+    t.ok(hc[0] !== hc[1], 'High Contrast mode: the chosen answer looks different from the other', hc);
     await ctx.close();
+
+    /* 5b. Hard inputs: a long link in a note, a very long first name, a connection that never answers */
+    const [hard] = (await host.post('/api/host/guests', { entries: [{ name: 'Wolfeschlegelsteinhausenbergerdorffvoralternwaren Long', from: 'k' }] })).data.added;
+    await host.patch('/api/host/guests/' + hard.code, { note: 'The hotel: https://example.com/' + 'a'.repeat(120) });
+    ({ p, ctx } = await open('/' + hard.code, { phone: true }));
+    await p.setViewportSize({ width: 320, height: 700 });
+    const fits = await p.evaluate(() => {
+      const card = document.querySelector('.q-card').getBoundingClientRect(), note = document.getElementById('note').getBoundingClientRect();
+      return note.left >= card.left - 1 && note.right <= card.right + 1 && document.documentElement.scrollWidth <= innerWidth;
+    });
+    t.ok(fits, 'at 320px a long link in the note stays inside the card, and a long name never widens the page');
+    await p.route('**/api/rsvp/**', () => {});   // the request goes out and nothing ever comes back
+    await p.check('#coming-no'); await p.click('#send');
+    const gaveUp = await p.waitForFunction(() => /Could not reach/.test(document.getElementById('send-hint').textContent), null, { timeout: 25000 }).then(() => true, () => false);
+    t.ok(gaveUp && (await p.locator('#send').innerText()) === 'Send RSVP' && await p.locator('#copy').isVisible(), 'a reply that gets no answer gives up after 15 seconds, says so, and offers to copy it');
+    await ctx.close();
+    await host.del('/api/host/guests/' + hard.code);   // keeps the console's screenshots as they were
 
     /* 6. Only a guest's own link opens an invite */
     const lost = async (path, setup) => {
@@ -119,7 +151,8 @@ export async function run(base) {
     /* 9. Times, set in the console, in 12-hour form */
     await host.put('/api/host/settings', { event: { date: '2026-12-26', nikah: '10:00', reception: '12:30', lunch: '13:00', venue: 'Sample Hall', maps: 'https://maps.app.goo.gl/9h6yuat4DQtRhneK7' } });
     ({ p, ctx } = await open('/' + sneha.code, { phone: true, light: true }));
-    t.ok((await p.locator('#when').innerText()) === 'Sat 26 Dec 2026 · 12:30 PM' && (await p.locator('#where').innerText()) === 'Sample Hall', 'the card shows the time and venue');
+    t.ok((await p.locator('#when').innerText()) === 'Sat 26 Dec 2026 · 12:30 PM' && (await p.locator('#where').innerText()) === 'Sample Hall (tap to open maps)', 'the card shows the time and venue');
+    t.ok((await p.getAttribute('#where a', 'href')) === 'https://maps.app.goo.gl/9h6yuat4DQtRhneK7', 'with a venue name set, the venue itself opens the map');
     t.ok([await p.locator('#t-nikah').innerText(), await p.locator('#t-reception').innerText(), await p.locator('#t-lunch').innerText()].join() === '10:00 AM,12:30 PM,1:00 PM', 'the schedule is in 12-hour form');
     const oneLine = await p.evaluate(() => [...document.querySelectorAll('.q-schedule time')].every((e) => e.getClientRects().length === 1 && e.offsetHeight < 30));
     t.ok(oneLine, 'each time fits on one line at 390px');

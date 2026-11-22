@@ -123,7 +123,7 @@ export function terminalInvite({ url, guest, event, reply, color, open }) {
   const c = paint(color), gilt = (s) => c('38;5;222', s), brass = (s) => c('38;5;179', s), dim = (s) => c('38;5;245', s), green = (s) => c('38;5;114', s), bold = (s) => c('1', s);
   const first = Q.first(guest.name), sender = SENDERS[guest.sender];
   const when = prettyDate(event.date) + (event.reception ? ' · ' + prettyTime(event.reception) : '');
-  const where = event.venue || (event.maps ? 'See it on the map: ' + event.maps : 'To be announced');
+  const where = event.venue ? event.venue + (event.maps ? ' (map: ' + event.maps + ')' : '') : event.maps ? 'See it on the map: ' + event.maps : 'To be announced';
   const rsvpUrl = `${url.origin}/${guest.code}/rsvp`;
   const lines = [
     '',
@@ -134,11 +134,13 @@ export function terminalInvite({ url, guest, event, reply, color, open }) {
     '',
     brass('  Bismillah ir-Rahman ir-Rahim'),
     '',
-    `  Assalamu alaikum, ${first}.`,
-    '',
     bold('  KAIF & JABEEN'),
-    '  I am getting married. The nikah is a small family gathering in the morning;',
-    '  the reception after it is where I want my people. Come hungry.',
+    '',
+    `  Hey ${first},`,
+    '  Before we officially close out 2026, I’m spinning up one last P1 bridge',
+    '  call—I’m getting married! Don’t worry, there’s no outage to fix, no logs',
+    '  to dig through, and zero RCAs to write. Just mute your notifications, come',
+    '  hungry, and help us end the year on a high note.',
     ...(guest.note ? ['', `  “${guest.note}”`] : []),
     '',
     `  ${dim('WHEN ')}  ${when || 'To be announced'}`,

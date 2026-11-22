@@ -30,6 +30,8 @@ export async function run(base) {
   t.ok(added.every((g) => /^[kj]-[a-z0-9-]+-[a-z0-9]{6}$/.test(g.code)), 'codes are sender, name and six random characters', added.map((g) => g.code));
   t.ok(added[2].line === 12, 'an imported line number is kept', added[2]);
   const [priya, priyaJ] = added;
+  r = await host.post('/api/host/guests', { entries: [{ name: 'x'.repeat(61), from: 'k' }] });
+  t.ok(r.data.skipped?.[0]?.reason === 'too_long', 'a name over 60 characters is skipped as too long, not as "not a name"', r.data.skipped);
 
   // The guest page and the preview tags
   r = await anon.get('/' + priya.code);
@@ -56,6 +58,10 @@ export async function run(base) {
     [{ coming: 'maybe' }, 'coming_required', 'no yes or no'],
     [{ coming: 'no', message: 'x'.repeat(141) }, 'message_too_long', 'a 141-character message'],
   ]) { r = await anon.put('/api/rsvp/' + priya.code, body); t.ok(r.status === 400 && r.data.error === error, 'refused: ' + label, r.data); }
+  for (const raw of ['null', '[1]', '7']) {
+    r = await anon.put('/api/rsvp/' + priya.code, raw, { 'content-type': 'application/json' });
+    t.ok(r.status === 400 && r.data.error === 'bad_json', `a body of ${raw} is refused, not a server error`, r.status);
+  }
   r = await anon.put('/api/rsvp/k-nobody-abcdef', { coming: 'no' });
   t.ok(r.status === 404, 'a reply for a code not on the list is refused');
 
@@ -72,7 +78,7 @@ export async function run(base) {
   // curl
   r = await fetch(base + '/' + priyaJ.code + '?plain', { headers: { 'user-agent': 'curl/8.5.0' } });
   let body = await r.text();
-  t.ok(r.headers.get('content-type').startsWith('text/plain') && body.includes('Assalamu alaikum, Priya.') && body.includes('— Jabeen'), 'curl gets the invite as text, in the sender’s voice');
+  t.ok(r.headers.get('content-type').startsWith('text/plain') && body.includes('Hey Priya,') && body.includes('— Jabeen'), 'curl gets the invite as text, in the sender’s voice');
   t.ok(/[\/\\|+x-]{6,}/.test(body) && !body.includes('\x1b['), 'with an ASCII lattice, and no colour codes when ?plain');
   r = await fetch(base + '/' + priyaJ.code + '/rsvp', { method: 'POST', headers: { 'user-agent': 'curl/8.5.0', 'content-type': 'application/x-www-form-urlencoded' }, body: 'coming=yes&seats=2&veg=2&message=See+you' });
   body = await r.text();
@@ -92,6 +98,7 @@ export async function run(base) {
   t.ok(r.data.includes('DTSTART:20261226T070000Z') && r.data.includes('DTEND:20261226T100000Z'), 'with a reception time, the calendar event is 12:30 to 3:30 PM IST', r.data.split('\r\n').filter((l) => l.startsWith('DT')));
   t.ok((await host.put('/api/host/settings', { event: { date: '2026-12-26', reception: '25:00' } })).data.error === 'bad_time', 'a bad time is refused');
   t.ok((await host.put('/api/host/settings', { event: { date: '2026-12-26', maps: 'javascript:alert(1)' } })).data.error === 'bad_map_link', 'a map link must be https');
+  t.ok((await host.put('/api/host/settings', { event: { date: '2026-02-31' } })).data.error === 'bad_date', 'a day that does not exist (31 February) is refused');
   await host.put('/api/host/settings', { repliesOpen: false });
   r = await anon.put('/api/rsvp/' + priya.code, { coming: 'no' });
   t.ok(r.status === 403 && r.data.error === 'closed', 'with replies closed, a reply is refused');

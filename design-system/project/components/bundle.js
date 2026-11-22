@@ -30,6 +30,7 @@
   }
 
   // The seven-character invite hash printed on a guest's card.
+  // Never change norm(), hash() or sha(): every guest's hash and lattice, already sent and drawn into link previews, depend on them.
   function sha(s) {
     var a = ('0000000' + hash(s).toString(16)).slice(-8);
     var b = ('0000000' + hash(norm(s) + '#qubool').toString(16)).slice(-8);
@@ -37,11 +38,6 @@
   }
 
   function first(name) { return String(name || '').trim().split(/\s+/)[0] || 'friend'; }
-
-  function slug(name) {
-    var base = norm(name).replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'guest';
-    return base + '-' + sha(name).slice(0, 4);
-  }
 
   /* ---------- jaali: the lattice drawn from a name ---------- */
 
@@ -150,39 +146,14 @@
     return svg + '</svg>';
   }
 
-  /* ---------- personal links: who invited whom, signed ---------- */
+  /* ---------- who invited whom ---------- */
 
-  // Never change SALT, sign() or sha(): every link already minted depends on them.
-  var SALT = 'kaif+jabeen/reception';
+  // Guest codes (k-priya-nair-x7q2pa) are minted by the Worker; nameSlug gives their middle part.
   var SENDERS = { k: 'Kaif', j: 'Jabeen' };
 
   function nameSlug(name) {
     return String(name || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
   }
-  function sign(from, ns) { return sha(from + '|' + ns + '|' + SALT).slice(0, 4); }
-  // "Ashok Yogi", "k"  ->  "k-ashok-yogi-17bf"
-  function mint(name, from) {
-    var ns = nameSlug(name);
-    return ns && SENDERS[from] ? from + '-' + ns + '-' + sign(from, ns) : null;
-  }
-  function parse(code) {
-    var m = /^([kj])-([a-z0-9]+(?:-[a-z0-9]+)*)-([0-9a-f]{4})$/.exec(code);
-    if (!m || sign(m[1], m[2]) !== m[3]) return null;
-    var name = m[2].split('-').map(function (w) { return w.charAt(0).toUpperCase() + w.slice(1); }).join(' ');
-    return { from: m[1], name: name, slug: m[0], line: null };
-  }
-  // What follows # in a guest's link: the code, optionally "-<n>" naming their one-liner.
-  //   "k-ashok-yogi-17bf"    ->  { from: "k", name: "Ashok Yogi", slug: "k-ashok-yogi-17bf", line: null }
-  //   "k-ashok-yogi-17bf-3"  ->  the same with line: 3
-  // null when the signature is wrong. The line number is not signed; it only picks a joke.
-  function openCode(text) {
-    text = String(text || '');
-    var m = /^(.*)-(\d{1,2})$/.exec(text);
-    if (m) { var withLine = parse(m[1]); if (withLine) { withLine.line = +m[2]; return withLine; } }
-    return parse(text);
-  }
-  // The text after # for a guest: their code, plus their line number when one was assigned.
-  function linkFor(code, line) { return code + (line == null || line === '' ? '' : '-' + line); }
 
   /* ---------- one-liners: the P.S. on each card, in the sender's voice ---------- */
 
@@ -254,7 +225,7 @@
       sender: SENDERS[from],
       note: g.note || '',
       sha: sha(name),
-      slug: g.slug || mint(name, from),
+      slug: g.slug || '',
       line: typeof g.line === 'number' ? g.line : null,
       quip: lineFor(name, from, g.line),
       jaali: jaaliParams(name)
@@ -334,10 +305,10 @@
   }
 
   window.Qubool = {
-    hash: hash, rng: rng, sha: sha, slug: slug, first: first,
+    hash: hash, rng: rng, sha: sha, first: first,
     tilings: TILINGS, jaaliParams: jaaliParams, jaaliPath: jaaliPath, jaaliSVG: jaaliSVG,
     lines: LINES, lineFor: lineFor, legacyLine: legacyLine, nextLine: nextLine, guest: guest,
-    senders: SENDERS, nameSlug: nameSlug, mint: mint, openCode: openCode, linkFor: linkFor,
+    senders: SENDERS, nameSlug: nameSlug,
     mealMark: mealMark, type: type, esc: esc
   };
 })();

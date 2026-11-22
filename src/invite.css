@@ -15,21 +15,27 @@ body { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: m
 .foot { text-align: center; }
 
 /* terminal additions for the live page */
-.q-term-body { max-height: 300px; overflow-y: auto; }
-.q-term-bar .skip { margin-left: auto; padding: 2px var(--space-2); border: 1px solid var(--term-dim); border-radius: var(--radius-sm); background: transparent; color: var(--term-ink); font: 500 11px/16px var(--font-mono); letter-spacing: 0.08em; cursor: pointer; }
+.q-term-body { max-height: 300px; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--term-dim) transparent; }
+.q-term-bar .skip { margin-left: auto; padding: 2px var(--space-2); border: 1px solid var(--term-dim); border-radius: var(--radius-sm); background: transparent; color: var(--term-ink); font: 500 0.75rem/1rem var(--font-mono); letter-spacing: 0.04em; cursor: pointer; }
 .q-term-bar .skip:focus-visible, .shell input:focus-visible { outline: 2px solid var(--gilt); outline-offset: 2px; }
 .shell { display: flex; align-items: center; gap: var(--space-2); padding: 1px var(--space-4); border-top: 1px solid var(--term-line); }
-.shell label { flex: none; font: 400 13px/22px var(--font-mono); color: var(--term-green); }
-.shell input { flex: 1; min-width: 0; height: 44px; border: 0; padding: 0; background: transparent; color: var(--term-ink); caret-color: var(--term-green); font: 400 13px/22px var(--font-mono); }
+.shell label { flex: none; font: 400 0.8125rem/1.375rem var(--font-mono); color: var(--term-green); }
+.shell input { flex: 1; min-width: 0; height: 44px; border: 0; padding: 0; background: transparent; color: var(--term-ink); caret-color: var(--term-green); font: 400 0.8125rem/1.375rem var(--font-mono); }
 .shell input::placeholder { color: var(--term-dim); opacity: 1; }
-@media (pointer: coarse) { .shell input { font-size: 16px; } }
+/* While the terminal types, its command row keeps its place unseen, so nothing below it moves when it appears. */
+.q-term .shell[hidden] { display: flex !important; visibility: hidden; }
+@media (pointer: coarse) { .shell input { font-size: 16px; } }   /* px on purpose: below 16px, iPhones zoom into the field */
 
 /* the lattice draws itself once, when the terminal opens the invite */
 .draw .q-jaali path { stroke-dasharray: 160; stroke-dashoffset: 160; animation: q-draw 2.2s ease-out forwards; }
 @keyframes q-draw { to { stroke-dashoffset: 0; } }
 @media (prefers-reduced-motion: reduce) { .draw .q-jaali path { animation: none; stroke-dasharray: none; stroke-dashoffset: 0; } }
-@media (max-width: 420px) { .q-names { font-size: 46px; line-height: 50px; } .q-schedule li { grid-template-columns: 72px 1fr; } .q-schedule .q-tag { grid-column: 2; justify-self: start; } }
-.maplink { color: var(--brass); text-underline-offset: 3px; }
+@media (max-width: 420px) { .q-names { font-size: 2.875rem; line-height: 3.125rem; } .q-schedule li { grid-template-columns: 4.5rem 1fr; } .q-schedule .q-tag { grid-column: 2; justify-self: start; } }
+.q-prose #greet { display: block; }   /* "Hey Arjun," on its own line, as a letter opens */
+/* The venue (or "See it on the map") opens the map; the bracketed hint stays quiet and un-underlined. */
+.maplink { color: var(--brass); text-decoration: none; }
+.maplink > span:first-child { text-decoration: underline; text-underline-offset: 3px; }
+.maplink .maptap { color: var(--ink-muted); font-weight: 400; }
 .maplink:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 
 /* Phones: every tap target at least 44px tall. Small links and Skip keep their look and grow an invisible hit area. */
@@ -44,7 +50,7 @@ body { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: m
 .calmenu { position: relative; }
 .calmenu summary { list-style: none; }
 .calmenu summary::-webkit-details-marker { display: none; }
-.calmenu summary::after { content: '▾'; margin-left: var(--space-1); font-size: 11px; }
-.calmenu[open] summary::after { content: '▴'; }
+.calmenu summary::after { content: ''; width: 5px; height: 5px; margin: -3px 0 0 var(--space-1); border: solid currentColor; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
+.calmenu[open] summary::after { margin-top: 3px; transform: rotate(-135deg); }
 .calmenu-list { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
 .send .q-hint { flex: 1 1 100%; }

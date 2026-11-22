@@ -29,11 +29,10 @@
 (function () {
   var Q = window.Qubool;
   var GUESTS = [
-    // Samples. On the live page these come from the link: name and sender from the code,
-    // line from its -<n> suffix, note from the page's NOTES table.
-    { name: 'Priya Nair', from: 'k', line: 0, note: 'You reviewed my worst pull requests without judgment. Come watch me ship the one that matters.' },
-    { name: 'Rahul Mehta', from: 'k', line: 1, note: '' },
-    { name: 'Sneha Iyer', from: 'j', line: 3, note: 'You were the first person I told. Of course you are on this list.' }
+    // Samples. On the live invite the Worker fills these in from the guest's row: name, sender, line, note and code.
+    { name: 'Priya Nair', from: 'k', line: 0, slug: 'k-priya-nair-x7q2pa', note: 'You reviewed my worst pull requests without judgment. Come watch me ship the one that matters.' },
+    { name: 'Rahul Mehta', from: 'k', line: 1, slug: 'k-rahul-mehta-m4kz9t', note: '' },
+    { name: 'Sneha Iyer', from: 'j', line: 3, slug: 'j-sneha-iyer-ez7nqw', note: 'You were the first person I told. Of course you are on this list.' }
   ];
   var card = document.getElementById('card'), diff = document.getElementById('diff');
   document.getElementById('who').innerHTML = GUESTS.map(function (g, i) {
@@ -45,19 +44,19 @@
       '<div class="q-card-arch">' + Q.jaaliSVG(g.name, { width: 380, height: 200, cell: 60 }) + '</div>' +
       '<div class="q-card-body">' +
         '<p class="q-bismillah" lang="ar" dir="rtl">\u0628\u0650\u0633\u0652\u0645\u0650 \u0671\u0644\u0644\u0651\u064e\u0670\u0647\u0650 \u0671\u0644\u0631\u0651\u064e\u062d\u0652\u0645\u064e\u0670\u0646\u0650 \u0671\u0644\u0631\u0651\u064e\u062d\u0650\u064a\u0645\u0650</p>' +
-        '<p class="q-label">Reception \u00b7 invite <b>' + g.sha + '</b></p>' +
         '<h1 class="q-names">Kaif <i>&amp;</i> Jabeen</h1>' +
-        '<p class="q-prose">Assalamu alaikum, ' + Q.esc(g.first) + '. I am getting married. The nikah is a small family gathering in the morning; the reception after it is where I want my people. Come hungry.</p>' +
+        '<p class="q-prose"><span style="display:block">Hey ' + Q.esc(g.first) + ',</span> Before we officially close out 2026, I’m spinning up one last P1 bridge call—I’m getting married! Don’t worry, there’s no outage to fix, no logs to dig through, and zero RCAs to write. Just mute your notifications, come hungry, and help us end the year on a high note.</p>' +
         (g.note ? '<p class="q-note">\u201c' + Q.esc(g.note) + '\u201d</p>' : '') +
         '<dl class="q-facts">' +
           '<div><dt>When</dt><dd>Sat 26 Dec 2026</dd></div>' +
           '<div><dt>Where</dt><dd>See it on the map</dd></div>' +
+          '<div><dt>Invite</dt><dd><b>' + g.sha + '</b></dd></div>' +
         '</dl>' +
         '<p class="q-sign">\u2014 ' + g.sender + '</p>' +
         '<p class="q-hint">P.S. ' + Q.esc(g.quip) + '</p>' +
       '</div>';
     diff.innerHTML = [
-      ['Link', '\u2026#' + Q.linkFor(g.slug, g.line)],
+      ['Link', 'kaifwedsjabeen.in/' + g.slug],
       ['Invite hash', g.sha],
       ['Lattice', 'tiling ' + g.jaali.label + ', angle ' + g.jaali.theta.toFixed(1) + '\u00b0' + (g.jaali.strap ? ', strapwork' : '')],
       ['Signed', g.sender + ', who sent the link'],

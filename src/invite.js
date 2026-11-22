@@ -52,12 +52,14 @@
     $('when').textContent = when || 'To be announced';
     var where = $('where');
     where.textContent = '';
-    if (EVENT.venue) where.textContent = EVENT.venue;
-    else if (EVENT.maps) {
+    if (EVENT.maps) {
+      // The venue name, or "See it on the map" before one is set, opens the map.
       var a = document.createElement('a');
-      a.href = EVENT.maps; a.target = '_blank'; a.rel = 'noopener'; a.textContent = 'See it on the map'; a.className = 'maplink';
+      a.href = EVENT.maps; a.target = '_blank'; a.rel = 'noopener'; a.className = 'maplink';
+      a.appendChild(document.createElement('span')).textContent = EVENT.venue || 'See it on the map';
+      if (EVENT.venue) { a.appendChild(document.createTextNode(' ')); var tap = a.appendChild(document.createElement('span')); tap.className = 'maptap'; tap.textContent = '(tap to open maps)'; }
       where.appendChild(a);
-    } else where.textContent = 'To be announced';
+    } else where.textContent = EVENT.venue || 'To be announced';
     [['t-nikah', EVENT.nikah], ['t-reception', EVENT.reception], ['t-lunch', EVENT.lunch]].forEach(function (x) {
       if (!x[1]) return;
       $(x[0]).textContent = prettyTime(x[1]);
@@ -78,13 +80,13 @@
     code: D.code, sha: Q.sha(D.name), quip: Q.lineFor(D.name, D.from, D.line), note: D.note || '', jaali: Q.jaaliParams(D.name),
     user: Q.first(D.name).toLowerCase().replace(/[^a-z0-9]/g, '') || 'guest'
   };
-  var INVITE = 'I am getting married. The nikah is a small family gathering in the morning; the reception after it is where I want my people. Come hungry.';
+  var INVITE = 'Before we officially close out 2026, I’m spinning up one last P1 bridge call—I’m getting married! Don’t worry, there’s no outage to fix, no logs to dig through, and zero RCAs to write. Just mute your notifications, come hungry, and help us end the year on a high note.';
 
   function applyGuest() {
     var g = guest;
     $('arch').innerHTML = Q.jaaliSVG(g.name, { width: 380, height: 200, cell: 60 });
     $('hash').textContent = g.sha;
-    $('greet').textContent = 'Assalamu alaikum, ' + g.first + '.';
+    $('greet').textContent = 'Hey ' + g.first + ',';
     $('invite-text').textContent = INVITE;
     $('note').hidden = !g.note;
     $('note').textContent = g.note ? '“' + g.note + '”' : '';
@@ -97,13 +99,15 @@
   }
 
   /* ---------- terminal ---------- */
-  var out = $('out'), shell = $('shell'), cmd = $('cmd'), run = null;
+  var out = $('out'), shell = $('shell'), cmd = $('cmd'), said = $('said'), run = null;
   function print(text, cls) {
     var r = document.createElement('span');
     r.className = 'q-term-line' + (cls ? ' ' + cls : '');
     r.textContent = text;
     out.appendChild(r);
     out.scrollTop = out.scrollHeight;
+    // Screen readers hear a command's answer (the boot script types through Q.type, not here).
+    if (!shell.hidden) said.appendChild(document.createElement('span')).textContent = text + ' ';
   }
   function echo(text, prompt) {
     var r = document.createElement('span'); r.className = 'q-term-line';
@@ -134,7 +138,12 @@
   function boot(instant) {
     if (run) run.stop();
     shell.hidden = true; $('skip').hidden = !!instant;
-    run = Q.type(out, linesFor(guest), { instant: !!instant, onDone: booted });
+    // Print it all once to measure the finished height, and hold that height while the lines type, so the card below never moves.
+    var lines = linesFor(guest), cs;
+    Q.type(out, lines, { instant: true });
+    cs = getComputedStyle(out);
+    out.style.minHeight = Math.min(out.scrollHeight - (cs.boxSizing === 'border-box' ? 0 : parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom)), parseFloat(cs.maxHeight) || 1e4) + 'px';
+    run = Q.type(out, lines, { instant: !!instant, onDone: booted });
   }
   $('skip').addEventListener('click', function () { boot(true); });
 
@@ -164,7 +173,7 @@
     cat: function (a) {
       var f = a[0];
       if (!f) return print('cat: which file? Try ls.', 'q-out');
-      if (f === 'invite.txt') { print('Assalamu alaikum, ' + guest.first + '. I am getting married.'); print('Nikah in the morning with family; reception and lunch after, with you.'); print('— ' + guest.sender, 'q-say'); }
+      if (f === 'invite.txt') { print('Hey ' + guest.first + ','); print(INVITE); print('— ' + guest.sender, 'q-say'); }
       else if (f === 'note.txt') print(guest.note || guest.quip);
       else if (f === 'schedule.txt') {
         var at = function (t, none) { return ((t ? prettyTime(t) : none) + '        ').slice(0, 8); };
@@ -189,6 +198,7 @@
         print('saved: ' + describeReply(saved) + (saved.message ? ' · "' + saved.message + '"' : ''), 'q-ok');
         return print('last changed ' + new Date(saved.updatedAt).toLocaleString(), 'q-out');
       }
+      if (sending) return print('rsvp: still sending your last answer.', 'q-out');
       var yes = a.indexOf('--qubool') >= 0 || a.indexOf('--yes') >= 0, no = a.indexOf('--regrets') >= 0 || a.indexOf('--no') >= 0;
       if (!yes && !no) { print('usage: rsvp --qubool --seats N --veg N', 'q-out'); print('       rsvp --regrets', 'q-out'); print('       rsvp --status', 'q-out'); return; }
       if (!D.repliesOpen) return print('rsvp: replies are closed. Message ' + guest.sender + ' directly.', 'q-out');
@@ -233,6 +243,7 @@
     e.preventDefault();
     var raw = cmd.value.trim(); cmd.value = '';
     if (!raw) return;
+    said.textContent = '';
     echo(raw);
     var parts = raw.split(/\s+/), fn = COMMANDS[parts[0].toLowerCase()];
     if (fn) fn(parts.slice(1)); else print('command not found: ' + parts[0] + '. Try help.', 'q-out');
@@ -287,13 +298,16 @@
   // Saves the reply. Resolves with the reply as stored, or rejects with { status, error }.
   function send(via) {
     sending = true; failed = null; render();
-    return fetch('/api/rsvp/' + guest.code, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body(via)) })
+    // A stalled phone connection gives up after 15 seconds and says so, rather than "Sending…" for ever.
+    var ctl = window.AbortController && new AbortController(), wait = setTimeout(function () { if (ctl) ctl.abort(); }, 15000);
+    return fetch('/api/rsvp/' + guest.code, { method: 'PUT', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body(via)), signal: ctl ? ctl.signal : undefined })
       .then(function (res) {
+        clearTimeout(wait);
         return res.json().catch(function () { return {}; }).then(function (data) {
           if (!res.ok) throw { status: res.status, error: data.error || 'server_error' };
           return data;
         });
-      }, function () { throw { status: 0, error: 'offline' }; })
+      }, function () { clearTimeout(wait); throw { status: 0, error: 'offline' }; })
       .then(function (data) {
         sending = false; fromSaved(data.rsvp); showDone(via === 'terminal');
         return data.rsvp;

@@ -41,6 +41,11 @@ export async function run(base) {
     await p.locator(`tr[data-code="${vikram.code}"] [data-act=msg]`).click();
     const msg = await p.evaluate(() => navigator.clipboard.readText());
     t.ok(msg.startsWith('Hi Vikram, Kaif here. I am getting married on 26 December') && msg.endsWith('/' + vikram.code), 'Copy message gives the ready-made message with their link', msg);
+    t.ok(await p.getByRole('button', { name: 'Copied Vikram', exact: true }).count() === 1, 'the button shows “Copied”, and its name still says whose row it is in');
+
+    // Screen readers: the guest's name heads the row, and each row button says whose row it is in
+    t.ok(await p.locator(`tr[data-code="${vikram.code}"] > th[scope=row]:first-child`).count() === 1, 'each guest’s name is the header of their row');
+    t.ok(await p.getByRole('button', { name: 'Remove Vikram', exact: true }).count() === 1 && await p.getByRole('button', { name: 'Copy link Vikram', exact: true }).count() === 1, 'row buttons are named with the guest: “Remove Vikram”, “Copy link Vikram”');
 
     // Note
     await p.locator(`tr[data-code="${vikram.code}"] [data-act=note]`).click();
@@ -83,12 +88,58 @@ export async function run(base) {
 
     await p.screenshot({ path: OUT + '/host-desktop-dark.png', fullPage: true });
 
-    // Remove takes two presses
-    await p.locator(`tr[data-code="${imran.code}"] [data-act=remove]`).click();
+    // Remove takes two presses; from the keyboard, the second press is right where the first one was
+    await p.focus(`tr[data-code="${imran.code}"] [data-act=remove]`); await p.keyboard.press('Enter');
     t.ok((await p.locator(`tr[data-code="${imran.code}"] [data-act=remove]`).innerText()) === 'Confirm remove', 'Remove asks for a second press');
+    t.ok(await p.evaluate(() => document.activeElement.textContent) === 'Confirm remove', 'keyboard focus stays on the button while the rows are redrawn');
     await p.locator(`tr[data-code="${imran.code}"] [data-act=remove]`).click();
     await p.waitForFunction((c) => !document.querySelector(`tr[data-code="${c}"]`), imran.code);
     t.ok(true, 'the second press removes the guest');
+
+    // A long one-word name still fits the whole table at 1280, shown in full (added after the screenshot, then removed)
+    const [longName] = (await api.post('/api/host/guests', { entries: [{ name: 'Venkatasubramaniam Iyer', from: 'k' }] })).data.added;
+    await p.reload(); await p.waitForSelector(`tr[data-code="${longName.code}"]`);
+    const fit = await p.evaluate((c) => { const w = document.querySelector('.q-table-wrap'), n = document.querySelector(`tr[data-code="${c}"] .n`); return { over: w.scrollWidth - w.clientWidth, cut: n.scrollWidth > n.clientWidth, cols: [...document.querySelectorAll('.q-table thead th')].map((t) => Math.round(t.getBoundingClientRect().width)).join(' ') }; }, longName.code);
+    t.ok(fit.over <= 0 && !fit.cut, 'with “Venkatasubramaniam Iyer” on the list the table still fits at 1280 and the name is whole', fit);
+    await api.del('/api/host/guests/' + longName.code);
+    await p.reload(); await p.waitForSelector('#rows tr');
+
+    // A first load that cannot reach the server says so and tries again, instead of a blank page
+    const p2 = await ctx.newPage();
+    await p2.route('**/api/host/state', (r) => r.abort());
+    await p2.goto(base + '/host');
+    await p2.waitForFunction(() => /Could not reach the server/.test(document.getElementById('who-am-i').textContent)).then(() => t.ok(true, 'an unreachable server on first load is explained, not a blank page'), () => t.ok(false, 'an unreachable server on first load is explained, not a blank page'));
+    await p2.close();
+
+    // Screen readers: the totals speak only when a number changes; connection problems are announced
+    const churn = await p.evaluate(async () => {
+      let n = 0; new MutationObserver(() => n++).observe(document.getElementById('stats'), { childList: true, subtree: true, characterData: true });
+      for (const v of ['k', 'all']) { document.querySelector(`.filters input[value="${v}"]`).click(); await new Promise((r) => setTimeout(r, 100)); }
+      return n;
+    });
+    t.ok(churn === 0, 'pressing filters does not rewrite the totals, so screen readers do not hear them again', churn);
+    t.ok(await p.evaluate(() => ['who-am-i', 'state'].every((id) => document.getElementById(id).getAttribute('aria-live') === 'polite')), 'the sign-in line and the list status are announced when they change');
+
+    // The 30-second refresh leaves the rows alone when nothing changed (a redraw of a long list holds up the page)
+    const p3 = await ctx.newPage();
+    await p3.clock.install();
+    await p3.goto(base + '/host'); await p3.waitForSelector('#rows tr');
+    await p3.evaluate(() => { document.querySelector('#rows tr').__kept = true; });
+    await p3.clock.fastForward(31000); await p3.waitForTimeout(800);
+    t.ok(await p3.evaluate(() => document.querySelector('#rows tr').__kept === true), 'a refresh with no changes does not redraw the list');
+    await p3.close();
+
+    // The link preview picture: a long first name still fits its greeting line
+    const edge = await p.evaluate(async () => {
+      await QuboolPreview.fonts();
+      const c = document.createElement('canvas');
+      QuboolPreview.draw(c, { name: 'Venkatasubramaniam Iyer', from: 'k', sha: '0000000', date: 'Sat 26 Dec 2026' });
+      const d = c.getContext('2d').getImageData(560, 190, 640, 50).data;
+      let right = 0;
+      for (let i = 0; i < d.length; i += 4) if (Math.abs(d[i] - d[0]) + Math.abs(d[i + 1] - d[1]) + Math.abs(d[i + 2] - d[2]) > 60) right = Math.max(right, 560 + (i / 4) % 640);
+      return right;
+    });
+    t.ok(edge > 900 && edge <= 1136, 'a long first name fits the link preview’s greeting line', edge);
 
     // Phone
     await p.setViewportSize({ width: 390, height: 844 });

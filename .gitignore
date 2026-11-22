@@ -1,9 +1,25 @@
+# Installed packages and build output
 node_modules/
 dist/
 .wrangler/
+tests/out/
+
+# Local secrets for wrangler dev
 .dev.vars
 .dev.vars.*
-tests/out/
+
 # Guest names, notes and replies never go in this repository: it is public.
 data/
 *.local.json
+
+# Design tool reports and local Claude settings
+.impeccable/
+.claude/settings.local.json
+
+# Mac, editors and logs
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.log
+npm-debug.log*

@@ -5,4 +5,3 @@ body { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: m
 .page > .q-term { width: 100%; justify-self: stretch; }
 .q-term-body { min-height: 0; }
 .q-card-arch { height: 140px; }
-.title { margin: 0; font: 400 28px/34px var(--font-display); letter-spacing: -0.01em; }

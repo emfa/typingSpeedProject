@@ -5,14 +5,13 @@ Qubool is the invitation to Kaif and Jabeen's wedding reception on Saturday 26 D
 Whoever sent the link is speaking, Kaif or Jabeen, in the first person, to people they like. The card is signed by that person.
 
 - Write "I", never "we cordially invite". "I am getting married, and I want you there."
-- Greet with "Assalamu alaikum, {first name}." Close with "insha'Allah" where a plan is stated: "See you on the 26th, insha'Allah."
+- The terminal greets with "Assalamu alaikum, {first name}."; the card opens "Hey {first name}," on its own line. Close with "insha'Allah" where a plan is stated: "See you on the 26th, insha'Allah."
 - One joke per screen, at most, and it is always about the food or the day, never about the faith or the other half. Kaif's guests are mostly engineers and get engineering jokes; Jabeen's get plain warm ones. "I promise the biryani scales horizontally." The lines are `Qubool.lines.k` and `Qubool.lines.j`; add new ones at the end.
 - The nikah is named and explained in one line: it is a small family gathering in the morning; guests are invited to the reception and lunch that follow.
 - Sentence case everywhere. Labels in `label` are uppercase by style, not by typing.
 - No emoji. No exclamation marks in the invitation itself.
 - Say "Reception", "Lunch", "Seats", "Veg", "Non-veg". The yes on the RSVP is "Qubool hai, I'm in".
 - Times are 12-hour everywhere: "12:30 PM", never "12:30" or "13:00". Dates read "Sat 26 Dec 2026".
-- Until an open-link guest says who invited them, the page speaks as both: "We are getting married", signed "Kaif & Jabeen".
 
 ## Colour
 
@@ -23,6 +22,7 @@ Whoever sent the link is speaking, Kaif or Jabeen, in the first person, to peopl
 - `veg` and `nonveg` belong to the meal marks alone.
 - `line` is for hairlines; any control's border is `line-strong`.
 - Focus is a solid 2px `focus` ring, 2px off the control. On a brass fill the ring is `on-brass`.
+- Selected text is `on-brass` on `brass`. In Windows High Contrast the brass fill is dropped, so a chosen option takes the system's Highlight colours instead, and grids whose dividers are a 1px gap (the totals, the console filters) draw them in the text colour.
 
 ## Type
 
@@ -32,6 +32,9 @@ Two voices, never mixed inside a sentence.
 - **JetBrains Mono** (`--font-mono`) for everything the system says: commands and table cells in `code`, facts in `data`, field labels and tags in `label`, button labels.
 - **Amiri** (`--font-arabic`) for the Bismillah in `bismillah`, and nothing else.
 - All three are loaded from Google Fonts; there are no font files in this system.
+- The CSS sets sizes in rem (1rem = 16px), so a reader's larger default text size carries through. `tokens.json` gives them in px at the default size.
+- No small label sits above a heading. A heading carries its own weight.
+- Guests' names and hosts' notes can be long, in any script, and may hold a link. The card and the reply form break a word that does not fit rather than grow wider; the terminal bar shortens the user@host line with an ellipsis.
 
 ## Shape and space
 
