@@ -1,6 +1,6 @@
 # Kaif & Jabeen reception invite
 
-Read `README.md` first: it describes the Worker, the database, the console and the Cloudflare setup.
+Read `README.md` first: it describes the Worker, the database, the console and the Cloudflare setup. Then read `HANDOFF.md`: what is live, how it deploys, decisions made, and the open items.
 
 - **The repository is public.** Never commit guest names, notes, replies, passphrases, or exports. They live in D1 and in Worker secrets. `data/` and `.dev.vars` are git-ignored for this.
 - **Design system:** `design-system/project/` is the source for look and voice. Read its `README.md` before writing copy or styles, and use its tokens and components.

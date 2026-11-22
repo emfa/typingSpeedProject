@@ -88,6 +88,7 @@ Before sending links, open one in a private window, and paste one into a WhatsAp
 
 ```bash
 npm install
+npm run test:setup   # once: downloads Chromium for the tests
 npm test
 ```
 
