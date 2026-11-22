@@ -28,7 +28,7 @@ Whoever sent the link is speaking, Kaif or Jabeen, in the first person, to peopl
 
 Two voices, never mixed inside a sentence.
 
-- **Fraunces** (`--font-display`) for everything said from the heart: the names in `names`, headings in `title`, the invitation in `prose`, the personal line in `note` (italic).
+- **Fraunces** (`--font-display`) for everything said from the heart: the names in `names`, section headings in `title` (`.q-title`), schedule entries in `entry`, the invitation in `prose`, the personal line in `note` (italic).
 - **JetBrains Mono** (`--font-mono`) for everything the system says: commands and table cells in `code`, facts in `data`, field labels and tags in `label`, button labels.
 - **Amiri** (`--font-arabic`) for the Bismillah in `bismillah`, and nothing else.
 - All three are loaded from Google Fonts; there are no font files in this system.

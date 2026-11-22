@@ -55,7 +55,7 @@
     fetch('/api/host/login', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ passphrase: $('pass').value }) })
       .then(function (res) { return res.json().then(function (d) { return { ok: res.ok, d: d }; }); })
       .then(function (r) {
-        if (r.ok) { $('pass').value = ''; idle = r.d.idleSeconds || idle; lastActive = Date.now(); load(true); return; }
+        if (r.ok) { $('pass').value = ''; idle = r.d.idleSeconds || idle; lastActive = Date.now(); load(true).catch(function () {}); return; }
         hint.textContent = r.d.error === 'locked' ? 'Too many wrong tries. Wait 15 minutes, then try again.'
           : r.d.error === 'not_configured' ? 'Sign-in is not set up yet (see the README).' : 'That passphrase is not right.';
       }, function () { hint.textContent = MESSAGES.offline; });

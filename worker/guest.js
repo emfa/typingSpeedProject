@@ -79,7 +79,7 @@ export async function guestPage(env, url, guest, { status = 200 } = {}) {
 
 // Any address that is not a guest's own link. Nothing about any guest is on this page.
 export function notFoundPage(url) {
-  const tags = '<title>Invite not found · Kaif &amp; Jabeen</title>\n<meta property="og:title" content="Invite not found">\n<meta property="og:image" content="' + escapeHtml(url.origin + '/og.jpg') + '">';
+  const tags = head({ title: 'Invite not found · Kaif & Jabeen', description: 'This link does not match an invitation. Please check the link you were sent.', image: `${url.origin}/og.jpg`, url: url.origin + url.pathname });
   return html(missingHtml.replace('<!--HEAD-->', () => tags).replace('/*DATA*/null', () => scriptJson({ host: url.host })), 404);
 }
 

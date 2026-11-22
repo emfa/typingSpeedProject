@@ -47,3 +47,21 @@ body { padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: m
 .filters { max-width: none; grid-auto-flow: row; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); }
 .filters label + label { border-left: 0; }
 .filters label { border-right: 1px solid var(--line-strong); margin-right: -1px; }
+
+/* The guest table fits a laptop (1280px and up) and keeps the guest's name in view when it scrolls on smaller screens. */
+.q-table td { white-space: normal; }
+.q-table td, .q-table th { padding-inline: var(--space-2); }
+.q-table .url, .q-table .q-tag, .q-table .sent, .q-table .q-btn { white-space: nowrap; }
+.q-table .who { min-width: 160px; }
+.q-table .url { max-width: 160px; }
+.q-table .acts { flex-direction: column; align-items: flex-start; }
+.q-table .msg, .q-table .note { min-width: 130px; max-width: 220px; }
+.q-table [data-act=remove] { min-width: 128px; }   /* room for "Confirm remove", so pressing it never widens the table */
+.q-table tr > :first-child:not([colspan]) { position: sticky; left: 0; z-index: 1; background: var(--ground); box-shadow: inset -1px 0 0 var(--line); }
+/* Narrow phones: the pinned name column drops the seal, leaving room for the buttons beside it. */
+@media (max-width: 420px) { .q-table .who { min-width: 0; } .q-table .who .q-seal { display: none; } }
+/* Phones: table buttons and the sent tick are 44px tall to tap. */
+@media (max-width: 820px), (pointer: coarse) {
+  .q-btn-small { height: 44px; }
+  .sent { min-height: 44px; }
+}

@@ -267,9 +267,10 @@
   }
   function command() {
     if (!s.coming) return '';
-    if (s.coming === 'no') return ' <span class="q-flag">--regrets</span>';
+    var nw = function (t) { return ' <span class="nw">' + t + '</span>'; };
+    if (s.coming === 'no') return nw('<span class="q-flag">--regrets</span>');
     var p = plates();
-    return ' <span class="q-flag">--qubool</span> --seats ' + s.seats + ' --veg ' + p.veg + ' --nonveg ' + p.nonveg;
+    return nw('<span class="q-flag">--qubool</span>') + nw('--seats ' + s.seats) + nw('--veg ' + p.veg) + nw('--nonveg ' + p.nonveg);
   }
   function body(via) {
     var p = plates(), yes = s.coming === 'yes';
@@ -329,7 +330,8 @@
     $('copy').hidden = !failed;
     $('send-hint').textContent = !D.repliesOpen ? 'Replies are closed now. Message ' + guest.sender + ' directly.'
       : failed ? errorText(failed)
-      : !ok ? ''
+      : !s.coming ? 'Say whether you can come, then send your reply.'
+      : !ok ? 'Choose veg or non-veg for your lunch.'
       : 'Saved straight to ' + guest.sender + '’s guest list. You can change it later from this link.';
   }
   function thanksLine() { return EVENT.date ? 'See you on the ' + ordinal(dateParts().d) + ', insha’Allah.' : 'See you there, insha’Allah.'; }

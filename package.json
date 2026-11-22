@@ -10,7 +10,8 @@
     "db:migrate:remote": "wrangler d1 migrations apply DB --remote",
     "deploy": "wrangler d1 migrations apply DB --remote && wrangler deploy",
     "test": "node tests/run.mjs",
-    "test:setup": "playwright install chromium"
+    "test:setup": "playwright install chromium webkit",
+    "test:browsers": "node tests/run.mjs --browsers chrome,webkit"
   },
   "devDependencies": {
     "playwright": "1.63.0",

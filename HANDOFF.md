@@ -43,8 +43,9 @@ git clone https://github.com/emfa/typingSpeedProject.git
 cd typingSpeedProject
 git checkout claude/review-analysis-mx2n3q
 npm install
-npm run test:setup        # downloads Chromium for the tests, once
-npm test                  # about 130 checks against a local Worker; nothing touches Cloudflare
+npm run test:setup        # downloads Chromium and WebKit for the tests, once
+npm test                  # about 280 checks against a local Worker; nothing touches Cloudflare
+npm run test:browsers     # every page at every screen size in Google Chrome and WebKit
 ```
 
 To click around locally, create `.dev.vars` (git-ignored) with test values, then:

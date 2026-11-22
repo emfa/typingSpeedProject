@@ -88,11 +88,12 @@ Before sending links, open one in a private window, and paste one into a WhatsAp
 
 ```bash
 npm install
-npm run test:setup   # once: downloads Chromium for the tests
-npm test
+npm run test:setup   # once: downloads Chromium and WebKit for the tests
+npm test             # every suite in Chromium
+npm run test:browsers  # every page at every screen size in Google Chrome and WebKit (Safari's engine)
 ```
 
-`npm test` builds the pages, starts the Worker locally on a fresh, empty database, and runs about 120 checks in Chromium and over HTTP. It needs Playwright with Chromium and access to Google Fonts. Screenshots land in `tests/out/`; compare them with `tests/baseline/` after a change.
+`npm test` builds the pages, starts the Worker locally on a fresh, empty database, and runs about 280 checks in Chromium and over HTTP. `tests/matrix.mjs` opens the invite (fresh and replied), "Invite not found" and the signed-in console at eight sizes from 1440x900 to 320x640, phones with touch, in dark and light, and checks sideways scroll, 44px tap targets, the table fitting, the heading sizes, the terminal's contrast and the Bismillah font. `test:browsers` runs that suite in the installed Google Chrome and in WebKit over local HTTPS (WebKit keeps the console's Secure cookie only on https). Firefox is not covered: Playwright's Firefox would not start on the development Mac. The tests need access to Google Fonts. Screenshots land in `tests/out/` (`tests/out/matrix/` for every size); compare them with `tests/baseline/` after a change.
 
 To click around locally:
 

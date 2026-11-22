@@ -29,13 +29,16 @@ const tokens =
 
 const FONTS =
   '<link rel="preconnect" href="https://fonts.googleapis.com">\n<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>\n' +
-  '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri&family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=JetBrains+Mono:wght@400;500&display=swap">';
+  '<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..600;1,9..144,300..600&family=JetBrains+Mono:wght@400;500&display=swap">';
 
 const bundleCss = read(DS, 'components', 'bundle.css');
 const bundleJs = read(DS, 'components', 'bundle.js');
 
 function page(name) {
   const [css, html, js] = ['css', 'html', 'js'].map((ext) => read(ROOT, 'src', `${name}.${ext}`));
+  // Amiri sets the Bismillah and nothing else, so ask Google Fonts for just those letters (about 21 KB, not 108 KB).
+  const bismillah = /class="q-bismillah"[^>]*>([^<]+)</.exec(html)?.[1];
+  const amiri = bismillah ? `\n<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Amiri&text=${encodeURIComponent(bismillah)}&display=swap">` : '';
   const scripts = [bundleJs, js];
   for (const s of scripts) if (/<\/script/i.test(s)) throw new Error(`a script for ${name} contains a closing script tag`);
   const doc = `<!doctype html>
@@ -48,7 +51,7 @@ function page(name) {
 <meta name="theme-color" content="#0b1512">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <!--HEAD-->
-${FONTS}
+${FONTS}${amiri}
 <style>
 ${tokens}
 [hidden] { display: none !important; }

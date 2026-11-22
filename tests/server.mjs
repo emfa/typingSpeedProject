@@ -13,19 +13,22 @@ mkdirSync(OUT, { recursive: true });
 export const LOGINS = { Tester: 'correct horse battery', Kaif: 'kaif local passphrase' };
 const WRANGLER = join(ROOT, 'node_modules', '.bin', 'wrangler');
 
-export async function startServer({ port = 8790, vars: extra = {} } = {}) {
+// https: serve over HTTPS with wrangler's own certificate, as the live site does. WebKit keeps the console's
+// Secure session cookie only on https. The test process then trusts that local certificate.
+export async function startServer({ port = 8790, vars: extra = {}, https = false } = {}) {
+  if (https) process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';   // local test server only
   const state = mkdtempSync(join(tmpdir(), 'qubool-test-'));
   const vars = join(state, 'test.vars');
   writeFileSync(vars, `HOST_LOGINS='${JSON.stringify(LOGINS)}'\nSESSION_SECRET=test-secret-0123456789abcdef0123456789abcdef\n` +
     Object.entries(extra).map(([k, v]) => `${k}=${v}\n`).join(''));
   execFileSync(WRANGLER, ['d1', 'migrations', 'apply', 'DB', '--local', '--persist-to', state], { cwd: ROOT, stdio: 'pipe' });
-  const child = spawn(WRANGLER, ['dev', '--port', String(port), '--ip', '127.0.0.1', '--persist-to', state, '--env-file', vars, '--show-interactive-dev-session=false'], {
+  const child = spawn(WRANGLER, ['dev', '--port', String(port), '--ip', '127.0.0.1', '--persist-to', state, '--env-file', vars, '--show-interactive-dev-session=false', ...(https ? ['--local-protocol', 'https'] : [])], {
     cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe'],
   });
   let log = '';
   child.stdout.on('data', (d) => (log += d));
   child.stderr.on('data', (d) => (log += d));
-  const base = `http://127.0.0.1:${port}`;
+  const base = `${https ? 'https' : 'http'}://127.0.0.1:${port}`;
   const deadline = Date.now() + 60000;
   for (;;) {
     if (child.exitCode !== null) throw new Error('wrangler dev exited:\n' + log);
