@@ -244,7 +244,8 @@
 
   /* ---------- terminal typing ---------- */
 
-  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/\x3C/g, '&lt;').replace(/>/g, '&gt;'); }
+  // Safe in element text and in quoted attributes.
+  function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/\x3C/g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;'); }
 
   // lines: [{ text, cls, prompt, typed, pause }]. Typed lines appear a key at a time;
   // the rest print whole. Reduced motion prints everything at once.

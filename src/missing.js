@@ -1,6 +1,6 @@
 (function () {
   'use strict';
-  var Q = window.Qubool, D = window.__DATA__ || {}, host = D.host || location.host;
+  var Q = window.Qubool, D = (function () { try { return JSON.parse(document.getElementById('qubool-data').textContent); } catch (e) { return null; } })() || {}, host = D.host || location.host;
   var asked = decodeURIComponent(location.pathname).slice(0, 48);
   document.getElementById('host').textContent = 'guest@' + host;
   document.getElementById('arch').innerHTML = Q.jaaliSVG('Kaif & Jabeen', { width: 380, height: 140, cell: 60 });

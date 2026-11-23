@@ -111,6 +111,16 @@ export async function run(base) {
     await p2.waitForFunction(() => /Could not reach the server/.test(document.getElementById('who-am-i').textContent)).then(() => t.ok(true, 'an unreachable server on first load is explained, not a blank page'), () => t.ok(false, 'an unreachable server on first load is explained, not a blank page'));
     await p2.close();
 
+    // A guest name can never become markup in the console, even with quotes (the audit's stored-injection finding)
+    const hostileName = 'Zed" autofocus onfocus="window.__xss=1" x="';
+    const [hostile] = (await api.post('/api/host/guests', { entries: [{ name: hostileName, from: 'k' }] })).data.added;
+    const p4 = await ctx.newPage();
+    await p4.goto(base + '/host'); await p4.waitForSelector(`tr[data-code="${hostile.code}"]`); await p4.waitForTimeout(300);
+    const inert = await p4.evaluate((c) => { const box = document.querySelector(`tr[data-code="${c}"] [data-act=sent]`); return { attrs: box.getAttributeNames().sort().join(','), label: box.getAttribute('aria-label'), ran: window.__xss || null }; }, hostile.code);
+    t.ok(inert.attrs === 'aria-label,data-act,type' && inert.label === 'Link sent to ' + hostileName && !inert.ran, 'a name with quotes stays text: no injected attributes, nothing runs', inert);
+    await p4.close();
+    await api.del('/api/host/guests/' + hostile.code);
+
     // Screen readers: the totals speak only when a number changes; connection problems are announced
     const churn = await p.evaluate(async () => {
       let n = 0; new MutationObserver(() => n++).observe(document.getElementById('stats'), { childList: true, subtree: true, characterData: true });

@@ -56,6 +56,8 @@ export async function replyForGuest(env, guest, input, via) {
   if (!(await repliesOpen(env))) return { status: 403, error: 'closed' };
   const parsed = parseAnswer(input);
   if (parsed.error) return { status: 400, error: parsed.error };
+  // At most 5 saved replies a minute per guest link (Cloudflare's rate limiter, no database writes), so a forwarded link cannot exhaust the write quota.
+  if (env.RSVP_LIMIT && !(await env.RSVP_LIMIT.limit({ key: guest.code })).success) return { status: 429, error: 'rate_limited' };
   const reply = await saveReply(env, { id: guest.code, guestCode: guest.code, name: guest.name, sender: guest.sender, answer: parsed.value, via: viaOf(via) });
   return { reply };
 }

@@ -62,6 +62,26 @@ export async function run(base) {
     r = await anon.put('/api/rsvp/' + priya.code, raw, { 'content-type': 'application/json' });
     t.ok(r.status === 400 && r.data.error === 'bad_json', `a body of ${raw} is refused, not a server error`, r.status);
   }
+  // Security headers and HTTPS (the audit's transport and script-injection findings)
+  r = await anon.get('/' + priya.code);
+  const csp = r.headers.get('content-security-policy') || '';
+  t.ok(/script-src[^;]*'sha256-/.test(csp) && !/script-src[^;]*unsafe-inline/.test(csp), 'the CSP allows only the pages’ own scripts by hash, never inline script', csp);
+  t.ok(r.headers.get('strict-transport-security') === 'max-age=31536000', 'browsers are told to use HTTPS only', r.headers.get('strict-transport-security'));
+  // Locally every request arrives as http on the real domain; an outside visitor's address (set by Cloudflare) gets the redirect, a loopback developer does not.
+  r = await fetch(base + '/host', { redirect: 'manual', headers: { 'cf-connecting-ip': '203.0.113.5' } });
+  t.ok(r.status === 301 && new URL(r.headers.get('location'), base).pathname === '/host', 'a visitor on plain HTTP is redirected to HTTPS', r.status + ' ' + r.headers.get('location'));
+  t.ok((await fetch(base + '/host', { redirect: 'manual' })).status === 200, 'local development on http keeps working');
+  // Rate limits: one link saves at most 5 replies a minute, and page loads count at most one visit a minute
+  const [limited] = (await host.post('/api/host/guests', { entries: [{ name: 'Rate Limit Guest', from: 'j' }] })).data.added;
+  const saves = [];
+  for (let i = 0; i < 6; i++) saves.push((await anon.put('/api/rsvp/' + limited.code, { coming: i % 2 ? 'yes' : 'no', seats: 1, veg: 1 })).status);
+  t.ok(saves.slice(0, 5).every((s) => s === 200) && saves[5] === 429, 'a sixth save in a minute from one link is refused (429)', saves.join(','));
+  for (let i = 0; i < 3; i++) await fetch(base + '/' + limited.code, { headers: { 'user-agent': 'Mozilla/5.0' } });
+  await new Promise((res) => setTimeout(res, 300));
+  const opened = (await host.get('/api/host/state')).data.guests.find((g) => g.code === limited.code);
+  t.ok(opened.opens === 1, 'three quick page loads count as one visit, so loads cannot flood the database', opened.opens);
+  await host.del('/api/host/guests/' + limited.code);
+
   r = await anon.put('/api/rsvp/k-nobody-abcdef', { coming: 'no' });
   t.ok(r.status === 404, 'a reply for a code not on the list is refused');
 

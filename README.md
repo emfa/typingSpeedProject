@@ -35,7 +35,7 @@ browser ── Cloudflare Worker (worker/) ── D1 database (migrations/)
   - `scripts/build.mjs` inlines everything into `dist/invite.html` and `dist/host.html`.
   - The Worker imports those as text.
 - **`worker/`** is the server:
-  - `index.js` routes requests and adds security headers.
+  - `index.js` routes requests, sends plain HTTP to HTTPS, and adds security headers: HSTS, and a CSP that allows only the pages' own scripts by hash (`scripts/build.mjs` writes them to `dist/script-hashes.json`).
   - `guest.js` serves the guest pages, the curl text and the calendar file.
   - `rsvp.js` validates and stores replies.
   - `host.js` handles sign-in and the console's API.
@@ -44,7 +44,7 @@ browser ── Cloudflare Worker (worker/) ── D1 database (migrations/)
   - `rsvps`, the current reply per guest, and `rsvp_log`, every change;
   - `previews`, the link-preview images;
   - `settings`, the event's times and venue, and whether replies are open;
-  - `throttle`, for rate limits.
+  - `throttle`, for the sign-in lockout (10 wrong passphrases per address per 15 minutes). Reply saves are limited by Cloudflare's rate limiter instead (`RSVP_LIMIT` in `wrangler.jsonc`: 5 a minute per guest link), and visits count at most once a minute per guest.
 - **`static/`** holds plain files: the generic preview image, favicon and robots.txt.
 
 **This repository is public.** Guest names, notes and replies live only in the database, and passphrases only in Cloudflare secrets. Nothing personal belongs in git, and `data/` is ignored for that reason.
@@ -66,7 +66,7 @@ browser ── Cloudflare Worker (worker/) ── D1 database (migrations/)
    - `SESSION_SECRET`: any random string of 32 or more characters. One way to make one is `openssl rand -hex 32`.
    - Changing someone's passphrase signs them out everywhere; changing `SESSION_SECRET` signs out everyone.
    - Sessions are short on purpose. You are signed out after 5 minutes without a click or key press (the console's automatic refresh does not count) and when the browser closes. To change the limit, add a plain variable `HOST_IDLE_SECONDS` (default 300).
-4. **Domain.** `kaifwedsjabeen.in` and `www.kaifwedsjabeen.in` are in `wrangler.jsonc` under `routes`, so the first deploy attaches them. The domain must be on the same Cloudflare account. `www` redirects to the bare domain.
+4. **Domain.** `kaifwedsjabeen.in` and `www.kaifwedsjabeen.in` are in `wrangler.jsonc` under `routes`, so the first deploy attaches them. The domain must be on the same Cloudflare account. `www` redirects to the bare domain. These are the only addresses: `workers_dev` is off, so there is no `*.workers.dev` copy of the site.
 5. **First visit.**
    - Open `kaifwedsjabeen.in/host` and sign in.
    - Paste the guest list into **Add guests**: names one per line, or the JSON list exported from the old console.

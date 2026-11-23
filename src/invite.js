@@ -8,7 +8,7 @@
 
   /* ---------- what the server baked into the page ---------- */
   // { code, name, from, note, line, rsvp, event, repliesOpen, maxSeats, host }: this page only ever opens on a guest's own link.
-  var D = window.__DATA__;
+  var D = (function () { try { return JSON.parse(document.getElementById('qubool-data').textContent); } catch (e) { return null; } })();
   if (!D || !D.code) return;
   var EVENT = D.event || {}, MAX_SEATS = D.maxSeats || 4, HOST = D.host || location.host;
   var SENDERS = Q.senders;
@@ -320,6 +320,7 @@
   function errorText(err) {
     var e = err && err.error;
     return e === 'closed' ? 'Replies are closed now. Message ' + guest.sender + ' directly.'
+      : e === 'rate_limited' ? 'Too many tries in a minute. Wait a moment, then send it again.'
       : e === 'offline' ? 'Could not reach the invite. Check your connection and send again.'
       : e === 'not_found' ? 'This invite is no longer on the list. Message ' + guest.sender + ' directly.'
       : 'That did not save. Send it again, or copy your reply and message ' + guest.sender + '.';

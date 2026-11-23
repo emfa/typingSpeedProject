@@ -17,8 +17,8 @@
  },
  "lastChange": {
   "by": "Claude",
-  "at": "2026-11-22T19:56:00Z",
+  "at": "2026-11-23T17:48:00Z",
   "via": "Claude Code",
-  "note": "Copy from the hosts: the card opens \"Hey {first},\" with the P1-bridge-call paragraph; the message placeholder says \"a food allergy\"."
+  "note": "Security: esc() now escapes quotes too, so escaped text is safe inside quoted attributes as well as element text."Hey {first},\" with the P1-bridge-call paragraph; the message placeholder says \"a food allergy\"."
  }
 }

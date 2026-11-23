@@ -87,7 +87,9 @@ export function notFoundPage(url) {
 export function countOpen(env, ctx, request, code) {
   if (isPreviewBot(request.headers.get('user-agent'))) return;
   const at = now();
-  ctx.waitUntil(env.DB.prepare('UPDATE guests SET opens = opens + 1, last_opened_at = ?1, first_opened_at = COALESCE(first_opened_at, ?1) WHERE code = ?2').bind(at, code).run());
+  // At most one counted visit a minute per guest: repeated loads write nothing.
+  const recent = new Date(Date.now() - 60000).toISOString();
+  ctx.waitUntil(env.DB.prepare('UPDATE guests SET opens = opens + 1, last_opened_at = ?1, first_opened_at = COALESCE(first_opened_at, ?1) WHERE code = ?2 AND (last_opened_at IS NULL OR last_opened_at < ?3)').bind(at, code, recent).run());
 }
 
 /* ---------- curl: the invite as terminal text ---------- */
@@ -178,7 +180,8 @@ export const curlError = (error) => text(`rsvp: ${{
   veg_out_of_range: 'veg must be between 0 and seats',
   message_too_long: 'message is longer than 140 characters',
   closed: 'replies are closed. Message the person who invited you.',
-}[error] || error}\n`, error === 'closed' ? 403 : 400);
+  rate_limited: 'too many replies in a minute. Wait a moment, then send it again.',
+}[error] || error}\n`, error === 'closed' ? 403 : error === 'rate_limited' ? 429 : 400);
 
 function ordinal(n) { const t = n % 100; return n + (t > 10 && t < 14 ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] || 'th'); }
 

@@ -1,15 +1,16 @@
 // Kaif & Jabeen reception: one Worker for the guest pages, the host console and the API.
 // Files in static/ are served before this runs; everything else arrives here.
-import { json, text, fail, readJson } from './util.js';
+import { json, text, fail, readJson, clientIp } from './util.js';
 import {
   CODE, getGuest, getEvent, guestPage, notFoundPage, countOpen, isTerminal, terminalInvite, terminalReceipt, curlError, calendarFile,
 } from './guest.js';
 import { replyForGuest, publicReply, repliesOpen } from './rsvp.js';
 import { hostRoute } from './host.js';
+import scriptHashes from '../dist/script-hashes.json';
 
 const CSP = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
+  "script-src 'self' " + scriptHashes.join(' '),   // only the pages' own inline scripts, by hash
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   'font-src https://fonts.gstatic.com',
   "img-src 'self' data: blob:",
@@ -25,6 +26,7 @@ function secure(res) {
   h.set('x-robots-tag', 'noindex, nofollow');
   h.set('x-content-type-options', 'nosniff');
   h.set('permissions-policy', 'camera=(), microphone=(), geolocation=()');
+  h.set('strict-transport-security', 'max-age=31536000');   // browsers use HTTPS only for the next year
   if ((h.get('content-type') || '').startsWith('text/html')) h.set('content-security-policy', CSP);
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
 }
@@ -33,6 +35,12 @@ async function route(request, env, ctx) {
   // HEAD is answered as GET (the runtime drops the body); some link-preview robots only send HEAD.
   const url = new URL(request.url), path = url.pathname, method = request.method === 'HEAD' ? 'GET' : request.method;
 
+  // Plain HTTP goes to HTTPS, so a passphrase never travels unencrypted. Local development (a loopback client;
+  // Cloudflare sets this header to the visitor's real address, and visitors cannot override it) stays on http.
+  if (url.protocol === 'http:' && !/^(127\.|::1$)/.test(clientIp(request))) {
+    url.protocol = 'https:';
+    return Response.redirect(url.toString(), 301);
+  }
   // www and any other host name go to the one canonical address, so links look the same everywhere.
   if (env.CANONICAL_HOST && url.hostname === 'www.' + env.CANONICAL_HOST) {
     url.hostname = env.CANONICAL_HOST;

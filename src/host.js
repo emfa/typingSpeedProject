@@ -155,12 +155,13 @@
       tr.innerHTML =
         '<th scope="row"><span class="who"><span class="q-seal q-seal-small">' + seal(g.name) + '</span><span><span class="n" id="n-' + id + '"></span><span class="q-quiet small">' + SENDERS[g.from] + '</span></span></span></th>' +
         '<td><span class="url"><span>/' + Q.esc(g.code.slice(0, cut)) + '</span><b>' + Q.esc(g.code.slice(cut)) + '</b></span><span class="acts"><button class="q-btn q-btn-small" type="button" data-act="link"' + named('link') + '>Copy link</button><button class="q-btn q-btn-small" type="button" data-act="msg"' + named('msg') + '>Copy message</button></span></td>' +
-        '<td><label class="sent"><input type="checkbox" data-act="sent"' + (g.sentAt ? ' checked' : '') + ' aria-label="Link sent to ' + Q.esc(g.name) + '"><span class="q-quiet">' + (g.sentAt ? 'sent' : 'not yet') + '</span></label></td>' +
+        '<td><label class="sent"><input type="checkbox" data-act="sent"' + (g.sentAt ? ' checked' : '') + '><span class="q-quiet">' + (g.sentAt ? 'sent' : 'not yet') + '</span></label></td>' +
         '<td>' + (g.opens ? when(g.lastOpenedAt) + (g.opens > 1 ? '<div class="q-quiet small">' + g.opens + ' visits</div>' : '') : '<span class="q-quiet">not yet</span>') + '</td>' +
         replyCells(g.rsvp) +
         '<td class="note"><span class="note-text"></span><button class="q-btn q-btn-small" type="button" data-act="note"' + named('note') + '>' + (g.note ? 'Edit' : 'Add note') + '</button></td>' +
         '<td><button class="q-btn q-btn-small' + (arming === g.code ? ' q-btn-danger' : '') + '" type="button" data-act="remove"' + named('remove') + '>' + (arming === g.code ? 'Confirm remove' : 'Remove') + '</button></td>';
       tr.querySelector('.n').textContent = g.name;
+      tr.querySelector('[data-act=sent]').setAttribute('aria-label', 'Link sent to ' + g.name);   // set through the DOM: a name can never become markup
       tr.querySelector('.note-text').textContent = g.note;
       rows.appendChild(tr);
       if (editing === g.code) rows.appendChild(noteEditor(g));

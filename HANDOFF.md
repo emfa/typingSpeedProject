@@ -30,7 +30,12 @@ The owner is the groom's sibling. They and Kaif are the two hosts.
 2. **Times and venue name** are not set yet. The hosts enter them in the console (The day). The invite shows "TBA" and "See it on the map" until then.
 3. **Personal notes** for guests: none yet. Entered in the console per guest.
 4. **Jabeen's guest list** has not arrived.
-5. **Optional tidy-ups:**
+5. **Security checks only the owner can do** (from the security audit of 23 November; its report is outside the repository):
+   - In Cloudflare, Worker → Settings → Variables and Secrets: `HOST_LOGINS` passphrases must not be any test or example value in this repository (`correct horse battery`, `kaif local passphrase`, `a local passphrase`) or reused elsewhere, and `SESSION_SECRET` must be a long random value.
+   - In Cloudflare, check the Workers and D1 plan's daily limits. The site now limits reply saves and counted visits per guest, but only a Cloudflare rate-limiting rule can cap requests from the whole internet.
+   - On GitHub, Settings → Code security: turn on Dependabot alerts and secret scanning (free for public repositories).
+   - Use two-factor sign-in on the Cloudflare and GitHub accounts: a push to the production branch deploys the site.
+6. **Optional tidy-ups:**
    - Merge this branch into `main`, then set the production branch back to `main` in Cloudflare (Worker, Settings, Build). `main` still holds the old Angular app.
    - Make the GitHub repo private. Nothing secret is in it, but guests' colleagues are engineers.
    - Delete the retired claude.ai invite and host-console artifacts (ids in `CLAUDE.md`) once the owner agrees.

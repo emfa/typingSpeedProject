@@ -3,6 +3,7 @@
 //   <!--HEAD-->        page title and link-preview tags for this guest
 //   /*DATA*/null       the guest, their reply and the event, as JSON
 import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -37,6 +38,8 @@ const FONTS =
 const bundleCss = read(DS, 'components', 'bundle.css');
 const bundleJs = read(DS, 'components', 'bundle.js');
 
+const scriptHashes = new Set();
+
 function page(name) {
   const [css, html, js0] = ['css', 'html', 'js'].map((ext) => read(ROOT, 'src', `${name}.${ext}`));
   const js = js0.replace('/*NIGHT*/null', JSON.stringify(night));
@@ -64,16 +67,19 @@ ${css}</style>
 </head>
 <body>
 ${html}
-<script>window.__DATA__ = /*DATA*/null;</script>
+<script type="application/json" id="qubool-data">/*DATA*/null</script>
 ${scripts.map((s) => `<script>\n${s}\n</script>`).join('\n')}
 </body>
 </html>
 `;
   mkdirSync(join(ROOT, 'dist'), { recursive: true });
   writeFileSync(join(ROOT, 'dist', `${name}.html`), doc);
+  // The CSP allows these exact scripts and nothing else inline: no injected script or event handler can run.
+  for (const s of scripts) scriptHashes.add(`'sha256-${createHash('sha256').update(`\n${s}\n`).digest('base64')}'`);
   console.log(`dist/${name}.html`, doc.length, 'bytes');
 }
 
 page('invite');
 page('host');
 page('missing');   // "Invite not found", for any address that is not a guest's link
+writeFileSync(join(ROOT, 'dist', 'script-hashes.json'), JSON.stringify([...scriptHashes]) + '\n');
